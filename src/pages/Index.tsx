@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { ImageUploader } from '@/components/ImageUploader';
-import { StyleSelector, Style } from '@/components/StyleSelector';
-import { TransformationView } from '@/components/TransformationView';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Header } from '@/components/Header';
+import { ApiKeyDialog } from '@/components/ApiKeyDialog';
+import { TransformationContainer } from '@/components/TransformationContainer';
+import { Style } from '@/components/StyleSelector';
 
 const STYLES: Style[] = [
   {
@@ -77,14 +75,12 @@ const Index = () => {
 
     setIsLoading(true);
     try {
-      // Convert image to base64
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
         reader.readAsDataURL(selectedImage);
       });
 
-      // Make API call to Replicate
       const response = await fetch('https://api.replicate.com/v1/predictions', {
         method: 'POST',
         headers: {
@@ -110,7 +106,6 @@ const Index = () => {
 
       const prediction = await response.json();
       
-      // Poll for results
       const pollInterval = setInterval(async () => {
         const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
           headers: {
@@ -141,76 +136,29 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-8 space-y-8">
-        <header className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            AI Interior Design
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Transform your space with AI-powered interior design. Upload a photo and let our AI suggest beautiful transformations.
-          </p>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Upload Image</h2>
-              <ImageUploader onImageSelect={handleImageSelect} />
-            </div>
-            
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Select Style</h2>
-              <StyleSelector
-                styles={STYLES}
-                selectedStyle={selectedStyle}
-                onStyleSelect={handleStyleSelect}
-              />
-            </div>
-          </div>
-
-          <div className="lg:col-span-2">
-            <TransformationView
-              originalImage={originalPreview}
-              transformedImage={transformedImage}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
+        <Header />
+        <TransformationContainer
+          selectedImage={selectedImage}
+          selectedStyle={selectedStyle}
+          originalPreview={originalPreview}
+          transformedImage={transformedImage}
+          isLoading={isLoading}
+          styles={STYLES}
+          onImageSelect={handleImageSelect}
+          onStyleSelect={handleStyleSelect}
+        />
       </div>
 
-      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter Replicate API Key</DialogTitle>
-            <DialogDescription>
-              Please enter your Replicate API key to continue. You can find your API key at{' '}
-              <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                replicate.com/account/api-tokens
-              </a>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              type="password"
-              placeholder="Enter your API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <Button 
-              onClick={() => {
-                if (apiKey) {
-                  setShowApiKeyDialog(false);
-                  handleTransformation();
-                } else {
-                  toast.error('Please enter an API key');
-                }
-              }}
-              className="w-full"
-            >
-              Continue
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ApiKeyDialog
+        open={showApiKeyDialog}
+        onOpenChange={setShowApiKeyDialog}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+        onSubmit={() => {
+          setShowApiKeyDialog(false);
+          handleTransformation();
+        }}
+      />
     </div>
   );
 };
