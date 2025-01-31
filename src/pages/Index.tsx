@@ -81,7 +81,8 @@ const Index = () => {
         reader.readAsDataURL(selectedImage);
       });
 
-      const response = await fetch('https://api.replicate.com/v1/predictions', {
+      // Updated to use proxy URL
+      const response = await fetch('/api/replicate/v1/predictions', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${apiKey}`,
@@ -106,8 +107,9 @@ const Index = () => {
 
       const prediction = await response.json();
       
+      // Updated to use proxy URL for polling
       const pollInterval = setInterval(async () => {
-        const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        const pollResponse = await fetch(`/api/replicate/v1/predictions/${prediction.id}`, {
           headers: {
             'Authorization': `Token ${apiKey}`,
           },
