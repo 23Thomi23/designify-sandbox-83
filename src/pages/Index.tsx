@@ -153,7 +153,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="space-y-6">
             <div className="space-y-4">
-              <h-xl font-semibold">Upload Image</h2>
+              <h2 className="text-xl font-semibold">Upload Image</h2>
               <ImageUploader onImageSelect={handleImageSelect} />
             </div>
             
