@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 interface TransformationViewProps {
   originalImage: string | null;
@@ -16,6 +17,25 @@ export const TransformationView = ({
   className,
 }: TransformationViewProps) => {
   const [zoom, setZoom] = useState(1);
+
+  const handleDownload = async () => {
+    if (!transformedImage) return;
+    
+    try {
+      const response = await fetch(transformedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'transformed-image.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+    }
+  };
 
   return (
     <div className={cn("grid grid-cols-2 gap-8", className)}>
@@ -44,12 +64,24 @@ export const TransformationView = ({
             </div>
           </div>
         ) : transformedImage ? (
-          <img
-            src={transformedImage}
-            alt="Transformed"
-            className="w-full h-full object-contain"
-            style={{ transform: `scale(${zoom})` }}
-          />
+          <>
+            <img
+              src={transformedImage}
+              alt="Transformed"
+              className="w-full h-full object-contain"
+              style={{ transform: `scale(${zoom})` }}
+            />
+            <div className="absolute bottom-4 right-4">
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleDownload}
+                className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         ) : null}
         <div className="absolute top-4 left-4">
           <span className="px-3 py-1 text-xs font-medium bg-background/80 backdrop-blur-sm rounded-full">
@@ -58,7 +90,7 @@ export const TransformationView = ({
         </div>
       </div>
       
-      <div className="absolute bottom-4 right-4 flex items-center space-x-2">
+      <div className="absolute bottom-4 left-4 flex items-center space-x-2">
         <button
           onClick={() => setZoom(Math.max(1, zoom - 0.1))}
           className="p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
