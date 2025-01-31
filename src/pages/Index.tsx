@@ -10,25 +10,25 @@ const STYLES: Style[] = [
     id: 'modern',
     name: 'Modern Minimalist',
     description: 'Clean lines and minimal decoration',
-    preview: '/placeholder.svg'
+    preview: 'https://images.unsplash.com/photo-1482881497185-d4a9ddbe4151'
   },
   {
     id: 'scandinavian',
     name: 'Scandinavian',
     description: 'Light woods and natural elements',
-    preview: '/placeholder.svg'
+    preview: 'https://images.unsplash.com/photo-1500673922987-e212871fec22'
   },
   {
     id: 'industrial',
     name: 'Industrial',
     description: 'Raw materials and exposed elements',
-    preview: '/placeholder.svg'
+    preview: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04'
   },
   {
     id: 'contemporary',
     name: 'Contemporary',
     description: 'Current trends and modern comfort',
-    preview: '/placeholder.svg'
+    preview: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb'
   }
 ];
 
