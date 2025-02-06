@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 import { TransformationContainer } from '@/components/TransformationContainer';
 import { Style } from '@/components/StyleSelector';
+import { supabase } from '@/integrations/supabase/client';
 
 const STYLES: Style[] = [
   {
@@ -45,8 +46,6 @@ const Index = () => {
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
@@ -68,11 +67,6 @@ const Index = () => {
       return;
     }
 
-    if (!apiKey) {
-      setShowApiKeyDialog(true);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const base64Image = await new Promise<string>((resolve) => {
@@ -81,56 +75,27 @@ const Index = () => {
         reader.readAsDataURL(selectedImage);
       });
 
-      // Updated to use proxy URL
-      const response = await fetch('/api/replicate/v1/predictions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          version: "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38",
-          input: {
-            image: base64Image,
-            prompt: STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS],
-            guidance_scale: 15,
-            negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls, mirror, mirrored, functional, realistic",
-            prompt_strength: 0.8,
-            num_inference_steps: 50
-          }
-        })
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('replicate', {
+        body: {
+          image: base64Image,
+          prompt: STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS],
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start transformation');
+      if (functionError) {
+        throw functionError;
       }
 
-      const prediction = await response.json();
-      
-      // Updated to use proxy URL for polling
-      const pollInterval = setInterval(async () => {
-        const pollResponse = await fetch(`/api/replicate/v1/predictions/${prediction.id}`, {
-          headers: {
-            'Authorization': `Token ${apiKey}`,
-          },
-        });
-        
-        const result = await pollResponse.json();
-        
-        if (result.status === 'succeeded') {
-          clearInterval(pollInterval);
-          setTransformedImage(result.output);
-          toast.success('Transformation complete!');
-          setIsLoading(false);
-        } else if (result.status === 'failed') {
-          clearInterval(pollInterval);
-          throw new Error('Transformation failed');
-        }
-      }, 1000);
+      if (functionData.error) {
+        throw new Error(functionData.error);
+      }
 
+      setTransformedImage(functionData.output);
+      toast.success('Transformation complete!');
     } catch (error) {
       toast.error('Failed to transform image');
       console.error('Transformation error:', error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -150,17 +115,6 @@ const Index = () => {
           onStyleSelect={handleStyleSelect}
         />
       </div>
-
-      <ApiKeyDialog
-        open={showApiKeyDialog}
-        onOpenChange={setShowApiKeyDialog}
-        apiKey={apiKey}
-        setApiKey={setApiKey}
-        onSubmit={() => {
-          setShowApiKeyDialog(false);
-          handleTransformation();
-        }}
-      />
     </div>
   );
 };
