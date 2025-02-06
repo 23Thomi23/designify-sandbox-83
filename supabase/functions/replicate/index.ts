@@ -32,7 +32,7 @@ serve(async (req) => {
           prompt: prompt,
           guidance_scale: 15,
           negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls, mirror, mirrored, functional, realistic",
-          prompt_strength: 0.4,
+          prompt_strength: 0.6,
           num_inference_steps: 50
         }
       }
