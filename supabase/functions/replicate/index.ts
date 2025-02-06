@@ -4,9 +4,10 @@ import Replicate from "https://esm.sh/replicate@0.25.2"
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+}
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,6 +24,12 @@ serve(async (req) => {
 
     const { image, prompt } = await req.json()
 
+    if (!image || !prompt) {
+      throw new Error('Missing required fields: image and prompt are required')
+    }
+
+    console.log('Starting image transformation with prompt:', prompt)
+
     // Start the prediction
     const output = await replicate.run(
       "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
@@ -38,11 +45,14 @@ serve(async (req) => {
       }
     );
 
+    console.log('Transformation completed successfully')
+
     return new Response(JSON.stringify({ output }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
 
   } catch (error) {
+    console.error('Error in replicate function:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500
