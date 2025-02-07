@@ -26,6 +26,12 @@ const STYLES: Style[] = [
     preview: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04'
   },
   {
+    id: 'industrial',
+    name: 'Industrial',
+    description: 'Materiales expuestos y acentos metálicos',
+    preview: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb'
+  },
+  {
     id: 'rustico',
     name: 'Rústico',
     description: 'Tonos tierra y elementos de madera',
@@ -34,10 +40,11 @@ const STYLES: Style[] = [
 ];
 
 const STYLE_PROMPTS = {
-  minimalista: "Minimalist style with clean lines, functional furniture, and soft neutral tones. Keep walls, windows, and structure intact.",
-  moderno: "Modern design with sleek furniture, bold contrasts, and integrated lighting. Do not modify walls, windows, or structure.",
-  contemporaneo: "Contemporary style with elegant finishes, ergonomic furniture, and soft lighting. Maintain existing structure and elements.",
-  rustico: "Rustic design with earthy tones, wood elements, and cozy decor. Keep walls, windows, and structure intact."
+  minimalista: "Minimalist style with clean lines, functional furniture, and soft neutral tones.",
+  moderno: "Modern design with sleek furniture, bold contrasts, and integrated lighting.",
+  contemporaneo: "Contemporary style with elegant finishes, ergonomic furniture, and soft lighting.",
+  industrial: "Industrial look with exposed materials, metal accents, and rustic textures.",
+  rustico: "Rustic design with earthy tones, wood elements, and cozy decor."
 };
 
 const Index = () => {
