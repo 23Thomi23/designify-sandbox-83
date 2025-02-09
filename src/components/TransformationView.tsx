@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
@@ -39,27 +40,27 @@ export const TransformationView = ({
 
   return (
     <div className={cn("grid grid-cols-2 gap-8", className)}>
-      <div className="relative overflow-hidden rounded-xl border bg-background/50 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
         {originalImage && (
           <img
             src={originalImage}
             alt="Original"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain transition-transform duration-200"
             style={{ transform: `scale(${zoom})` }}
           />
         )}
         <div className="absolute top-4 left-4">
-          <span className="px-3 py-1 text-xs font-medium bg-background/80 backdrop-blur-sm rounded-full">
+          <span className="px-3 py-1.5 text-xs font-medium bg-background/95 backdrop-blur-sm rounded-full shadow-sm">
             Original
           </span>
         </div>
       </div>
       
-      <div className="relative overflow-hidden rounded-xl border bg-background/50 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-muted rounded-full animate-spin border-t-primary" />
+            <div className="relative animate-pulse">
+              <div className="w-16 h-16 rounded-full bg-primary/10" />
               <Loader2 className="w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-primary" />
             </div>
           </div>
@@ -68,7 +69,7 @@ export const TransformationView = ({
             <img
               src={transformedImage}
               alt="Transformed"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain transition-transform duration-200"
               style={{ transform: `scale(${zoom})` }}
             />
             <div className="absolute bottom-4 right-4">
@@ -76,7 +77,7 @@ export const TransformationView = ({
                 variant="secondary"
                 size="icon"
                 onClick={handleDownload}
-                className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
               >
                 <Download className="h-4 w-4" />
               </Button>
@@ -84,25 +85,29 @@ export const TransformationView = ({
           </>
         ) : null}
         <div className="absolute top-4 left-4">
-          <span className="px-3 py-1 text-xs font-medium bg-background/80 backdrop-blur-sm rounded-full">
+          <span className="px-3 py-1.5 text-xs font-medium bg-background/95 backdrop-blur-sm rounded-full shadow-sm">
             Transformed
           </span>
         </div>
       </div>
       
       <div className="absolute bottom-4 left-4 flex items-center space-x-2">
-        <button
+        <Button
+          variant="secondary"
+          size="icon"
           onClick={() => setZoom(Math.max(1, zoom - 0.1))}
-          className="p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+          className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
         >
-          -
-        </button>
-        <button
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
           onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-          className="p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+          className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
         >
-          +
-        </button>
+          <ZoomIn className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

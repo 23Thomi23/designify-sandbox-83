@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
@@ -32,8 +33,10 @@ export const ImageUploader = ({ onImageSelect, className }: ImageUploaderProps) 
     <div
       {...getRootProps()}
       className={cn(
-        "relative flex flex-col items-center justify-center w-full h-[400px] border-2 border-dashed rounded-xl transition-all duration-200 ease-in-out bg-background/50 backdrop-blur-sm",
-        isDragActive ? "border-primary" : "border-muted",
+        "relative flex flex-col items-center justify-center w-full h-[400px]",
+        "border-2 border-dashed rounded-xl transition-all duration-200",
+        "bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md",
+        isDragActive ? "border-primary scale-[0.99]" : "border-border/50",
         className
       )}
     >
@@ -46,9 +49,11 @@ export const ImageUploader = ({ onImageSelect, className }: ImageUploaderProps) 
         />
       ) : (
         <div className="flex flex-col items-center justify-center space-y-4 p-8 text-center">
-          <Upload className="w-12 h-12 text-muted-foreground" />
+          <div className="p-4 rounded-full bg-primary/10">
+            <Upload className="w-8 h-8 text-primary" />
+          </div>
           <div className="space-y-2">
-            <p className="text-lg font-medium text-foreground">
+            <p className="text-lg font-medium">
               Drop your image here
             </p>
             <p className="text-sm text-muted-foreground">

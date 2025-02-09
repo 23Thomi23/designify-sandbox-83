@@ -1,3 +1,4 @@
+
 import { cn } from '@/lib/utils';
 
 export interface Style {
@@ -27,19 +28,20 @@ export const StyleSelector = ({
           key={style.id}
           onClick={() => onStyleSelect(style.id)}
           className={cn(
-            "relative group overflow-hidden rounded-lg transition-all duration-200",
-            "border-2 hover:border-primary focus:border-primary focus:outline-none",
-            selectedStyle === style.id ? "border-primary" : "border-transparent"
+            "relative group overflow-hidden rounded-xl transition-all duration-200",
+            "bg-card border shadow-sm hover:shadow-md",
+            "hover:border-primary/50 focus:border-primary focus:outline-none",
+            selectedStyle === style.id ? "ring-2 ring-primary ring-offset-2" : "border-border/50"
           )}
         >
           <img
             src={style.preview}
             alt={style.name}
-            className="w-full h-32 object-cover"
+            className="w-full h-32 object-cover brightness-[0.9] group-hover:brightness-100 transition-all"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 flex flex-col justify-end">
             <h3 className="text-sm font-medium text-white">{style.name}</h3>
-            <p className="text-xs text-white/80">{style.description}</p>
+            <p className="text-xs text-white/80 mt-1">{style.description}</p>
           </div>
         </button>
       ))}
