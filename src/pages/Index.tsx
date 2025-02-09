@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
 import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 import { TransformationContainer } from '@/components/TransformationContainer';
 import { Style } from '@/components/StyleSelector';
+import { Room } from '@/components/RoomSelector';
 import { supabase } from '@/integrations/supabase/client';
 
 const STYLES: Style[] = [
@@ -50,6 +52,7 @@ const STYLE_PROMPTS = {
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('modern');
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +66,13 @@ const Index = () => {
 
   const handleStyleSelect = (styleId: string) => {
     setSelectedStyle(styleId);
+    if (selectedImage) {
+      handleTransformation();
+    }
+  };
+
+  const handleRoomSelect = (room: Room) => {
+    setSelectedRoom(room);
     if (selectedImage) {
       handleTransformation();
     }
@@ -82,10 +92,14 @@ const Index = () => {
         reader.readAsDataURL(selectedImage);
       });
 
+      const roomPrefix = selectedRoom ? `A ${selectedRoom} with ` : '';
+      const stylePrompt = STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS];
+      const fullPrompt = `${roomPrefix}${stylePrompt}`;
+
       const { data: functionData, error: functionError } = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
-          prompt: STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS],
+          prompt: fullPrompt,
         }
       });
 
@@ -114,12 +128,14 @@ const Index = () => {
         <TransformationContainer
           selectedImage={selectedImage}
           selectedStyle={selectedStyle}
+          selectedRoom={selectedRoom}
           originalPreview={originalPreview}
           transformedImage={transformedImage}
           isLoading={isLoading}
           styles={STYLES}
           onImageSelect={handleImageSelect}
           onStyleSelect={handleStyleSelect}
+          onRoomSelect={handleRoomSelect}
         />
       </div>
     </div>
