@@ -3,6 +3,8 @@ import { ImageUploader } from './ImageUploader';
 import { StyleSelector, Style } from './StyleSelector';
 import { TransformationView } from './TransformationView';
 import { RoomSelector, Room } from './RoomSelector';
+import { Button } from './ui/button';
+import { Wand2 } from 'lucide-react';
 
 interface TransformationContainerProps {
   selectedImage: File | null;
@@ -15,6 +17,7 @@ interface TransformationContainerProps {
   onImageSelect: (file: File) => void;
   onStyleSelect: (styleId: string) => void;
   onRoomSelect: (room: Room) => void;
+  onTransform: () => void;
 }
 
 export const TransformationContainer = ({
@@ -28,6 +31,7 @@ export const TransformationContainer = ({
   onImageSelect,
   onStyleSelect,
   onRoomSelect,
+  onTransform,
 }: TransformationContainerProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -53,6 +57,15 @@ export const TransformationContainer = ({
             onStyleSelect={onStyleSelect}
           />
         </div>
+
+        <Button 
+          onClick={onTransform} 
+          disabled={!selectedImage || !selectedRoom || isLoading}
+          className="w-full"
+        >
+          <Wand2 className="mr-2" />
+          {isLoading ? 'Procesando...' : 'Mejorar propiedad'}
+        </Button>
       </div>
 
       <div className="lg:col-span-2">

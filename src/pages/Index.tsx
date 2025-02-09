@@ -66,21 +66,20 @@ const Index = () => {
 
   const handleStyleSelect = (styleId: string) => {
     setSelectedStyle(styleId);
-    if (selectedImage) {
-      handleTransformation();
-    }
   };
 
   const handleRoomSelect = (room: Room) => {
     setSelectedRoom(room);
-    if (selectedImage) {
-      handleTransformation();
-    }
   };
 
   const handleTransformation = async () => {
     if (!selectedImage) {
       toast.error('Please select an image first');
+      return;
+    }
+
+    if (!selectedRoom) {
+      toast.error('Please select a room type');
       return;
     }
 
@@ -136,6 +135,7 @@ const Index = () => {
           onImageSelect={handleImageSelect}
           onStyleSelect={handleStyleSelect}
           onRoomSelect={handleRoomSelect}
+          onTransform={handleTransformation}
         />
       </div>
     </div>
