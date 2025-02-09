@@ -1,5 +1,5 @@
 
-import { home, bed, Kitchen } from 'lucide-react';
+import { Home, BedDouble, Utensils } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ export const RoomSelector = ({
         onClick={() => onRoomSelect('living room')}
         className="flex items-center gap-2"
       >
-        <home className="w-4 h-4" />
+        <Home className="w-4 h-4" />
         Living Room
       </Button>
       <Button
@@ -31,7 +31,7 @@ export const RoomSelector = ({
         onClick={() => onRoomSelect('bedroom')}
         className="flex items-center gap-2"
       >
-        <bed className="w-4 h-4" />
+        <BedDouble className="w-4 h-4" />
         Bedroom
       </Button>
       <Button
@@ -39,7 +39,7 @@ export const RoomSelector = ({
         onClick={() => onRoomSelect('kitchen')}
         className="flex items-center gap-2"
       >
-        <Kitchen className="w-4 h-4" />
+        <Utensils className="w-4 h-4" />
         Kitchen
       </Button>
     </div>
