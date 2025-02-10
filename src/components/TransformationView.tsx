@@ -1,6 +1,5 @@
 
-import { useState } from 'react';
-import { Loader2, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
@@ -17,8 +16,6 @@ export const TransformationView = ({
   isLoading = false,
   className,
 }: TransformationViewProps) => {
-  const [zoom, setZoom] = useState(1);
-
   const handleDownload = async () => {
     if (!transformedImage) return;
     
@@ -45,8 +42,7 @@ export const TransformationView = ({
           <img
             src={originalImage}
             alt="Original"
-            className="w-full h-full object-contain transition-transform duration-200"
-            style={{ transform: `scale(${zoom})` }}
+            className="w-full h-full object-contain"
           />
         )}
         <div className="absolute top-4 left-4">
@@ -69,8 +65,7 @@ export const TransformationView = ({
             <img
               src={transformedImage}
               alt="Transformed"
-              className="w-full h-full object-contain transition-transform duration-200"
-              style={{ transform: `scale(${zoom})` }}
+              className="w-full h-full object-contain"
             />
             <div className="absolute bottom-4 right-4">
               <Button
@@ -89,25 +84,6 @@ export const TransformationView = ({
             Transformed
           </span>
         </div>
-      </div>
-      
-      <div className="absolute bottom-4 left-4 flex items-center space-x-2">
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={() => setZoom(Math.max(1, zoom - 0.1))}
-          className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-          className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );
