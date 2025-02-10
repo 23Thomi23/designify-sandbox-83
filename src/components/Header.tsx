@@ -16,17 +16,21 @@ export const Header = () => {
   };
 
   return (
-    <header className="space-y-6">
+    <header className="space-y-6 relative z-10">
       <div className="flex justify-between items-center">
         <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-tight bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent sm:text-5xl">
             AI Interior Design
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
             Transform your space with AI-powered interior design. Upload a photo and let our AI suggest beautiful transformations.
           </p>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+        >
           Logout
         </Button>
       </div>
