@@ -30,7 +30,17 @@ const Auth = () => {
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (error) {
+          // Handle email not confirmed error specifically
+          if (error.message.includes('Email not confirmed')) {
+            toast.error('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
+            setIsLoading(false);
+            return;
+          }
+          throw error;
+        }
+        
         toast.success('Logged in successfully!');
         navigate('/');
       }
