@@ -1,12 +1,12 @@
-
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
 export const Header = () => {
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const {
+        error
+      } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("Logged out successfully");
     } catch (error) {
@@ -14,9 +14,7 @@ export const Header = () => {
       console.error("Error:", error);
     }
   };
-
-  return (
-    <header className="space-y-6 relative z-10">
+  return <header className="space-y-6 relative z-10">
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <h1 className="text-4xl font-semibold tracking-tight bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent sm:text-5xl">
@@ -26,14 +24,9 @@ export const Header = () => {
             Transform your space with AI-powered interior design. Upload a photo and let our AI suggest beautiful transformations.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-        >
+        <Button variant="outline" onClick={handleLogout} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground bg-red-600 hover:bg-red-500">
           Logout
         </Button>
       </div>
-    </header>
-  );
+    </header>;
 };
