@@ -4,7 +4,8 @@ import { StyleSelector, Style } from './StyleSelector';
 import { TransformationView } from './TransformationView';
 import { RoomSelector, Room } from './RoomSelector';
 import { Button } from './ui/button';
-import { Wand2 } from 'lucide-react';
+import { Wand2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface TransformationContainerProps {
   selectedImage: File | null;
@@ -14,6 +15,7 @@ interface TransformationContainerProps {
   transformedImage: string | null;
   isLoading: boolean;
   processingPhase?: string | null;
+  error?: string | null;
   styles: Style[];
   onImageSelect: (file: File) => void;
   onStyleSelect: (styleId: string) => void;
@@ -29,6 +31,7 @@ export const TransformationContainer = ({
   transformedImage,
   isLoading,
   processingPhase,
+  error,
   styles,
   onImageSelect,
   onStyleSelect,
@@ -59,6 +62,13 @@ export const TransformationContainer = ({
             onStyleSelect={onStyleSelect}
           />
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Button 
           onClick={onTransform} 

@@ -57,20 +57,24 @@ const Index = () => {
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [processingPhase, setProcessingPhase] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
     const preview = URL.createObjectURL(file);
     setOriginalPreview(preview);
     setTransformedImage(null);
+    setError(null);
   };
 
   const handleStyleSelect = (styleId: string) => {
     setSelectedStyle(styleId);
+    setError(null);
   };
 
   const handleRoomSelect = (room: Room) => {
     setSelectedRoom(room);
+    setError(null);
   };
 
   const handleTransformation = async () => {
@@ -86,6 +90,7 @@ const Index = () => {
 
     setIsLoading(true);
     setProcessingPhase('Transforming your space...');
+    setError(null);
     
     try {
       const base64Image = await new Promise<string>((resolve) => {
@@ -108,18 +113,26 @@ const Index = () => {
       });
 
       if (functionError) {
+        console.error('Function error:', functionError);
+        setError(`Error: ${functionError.message || 'Failed to process image'}`);
+        toast.error('Failed to transform image');
         throw functionError;
       }
 
       if (functionData.error) {
+        console.error('Data error:', functionData.error);
+        setError(`Error: ${functionData.error || 'Failed to process image'}`);
+        toast.error('Failed to transform image');
         throw new Error(functionData.error);
       }
 
       setTransformedImage(functionData.output);
       toast.success('Transformation complete with enhanced clarity!');
     } catch (error) {
-      toast.error('Failed to transform image');
       console.error('Transformation error:', error);
+      if (!error) {
+        setError('An unknown error occurred during processing');
+      }
     } finally {
       setIsLoading(false);
       setProcessingPhase(null);
@@ -138,6 +151,7 @@ const Index = () => {
           transformedImage={transformedImage}
           isLoading={isLoading}
           processingPhase={processingPhase}
+          error={error}
           styles={STYLES}
           onImageSelect={handleImageSelect}
           onStyleSelect={handleStyleSelect}
