@@ -4,7 +4,7 @@ import { StyleSelector, Style } from './StyleSelector';
 import { TransformationView } from './TransformationView';
 import { RoomSelector, Room } from './RoomSelector';
 import { Button } from './ui/button';
-import { Wand2, AlertTriangle } from 'lucide-react';
+import { Wand2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 
 interface TransformationContainerProps {
@@ -66,7 +66,14 @@ export const TransformationContainer = ({
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4 mr-2" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>{error}</p>
+                <p className="text-xs opacity-80">
+                  Try again with a different image or style. If the problem persists, the service might be unavailable.
+                </p>
+              </div>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -75,7 +82,7 @@ export const TransformationContainer = ({
           disabled={!selectedImage || !selectedRoom || isLoading}
           className="w-full"
         >
-          <Wand2 className="mr-2" />
+          {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2" />}
           {isLoading ? 'Procesando...' : 'Mejorar propiedad'}
         </Button>
       </div>

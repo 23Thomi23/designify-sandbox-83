@@ -51,7 +51,7 @@ const STYLE_PROMPTS = {
 
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<string>('modern');
+  const [selectedStyle, setSelectedStyle] = useState<string>('moderno');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
@@ -89,8 +89,9 @@ const Index = () => {
     }
 
     setIsLoading(true);
-    setProcessingPhase('Transforming your space...');
+    setProcessingPhase('Analyzing your space...');
     setError(null);
+    setTransformedImage(null);
     
     try {
       const base64Image = await new Promise<string>((resolve) => {
@@ -101,38 +102,48 @@ const Index = () => {
 
       const roomPrefix = selectedRoom ? `A ${selectedRoom} with ` : '';
       const stylePrompt = STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS];
-      const fullPrompt = `${roomPrefix}${stylePrompt}`;
+      const fullPrompt = `${roomPrefix}${stylePrompt} High quality, photorealistic.`;
 
-      setProcessingPhase('Applying design style and upscaling for clarity...');
+      setProcessingPhase('Applying design style...');
       
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('replicate', {
+      const response = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
           prompt: fullPrompt,
         }
       });
 
-      if (functionError) {
-        console.error('Function error:', functionError);
-        setError(`Error: ${functionError.message || 'Failed to process image'}`);
+      console.log("Replicate function response:", response);
+
+      if (response.error) {
+        console.error('Supabase function error:', response.error);
+        setError(`Error: ${response.error.message || 'Failed to process image'}`);
         toast.error('Failed to transform image');
-        throw functionError;
+        return;
       }
 
-      if (functionData.error) {
-        console.error('Data error:', functionData.error);
-        setError(`Error: ${functionData.error || 'Failed to process image'}`);
+      if (response.data.error) {
+        console.error('Replicate API error:', response.data.error);
+        setError(`API Error: ${response.data.error || 'Failed to process image'}`);
         toast.error('Failed to transform image');
-        throw new Error(functionData.error);
+        return;
       }
 
-      setTransformedImage(functionData.output);
+      setProcessingPhase('Enhancing with AI upscaler...');
+
+      if (!response.data.output) {
+        console.error('No output received from API');
+        setError('Error: No image was returned from the service');
+        toast.error('Failed to transform image');
+        return;
+      }
+
+      setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
     } catch (error) {
       console.error('Transformation error:', error);
-      if (!error) {
-        setError('An unknown error occurred during processing');
-      }
+      setError(`Error: ${error?.message || 'An unexpected error occurred'}`);
+      toast.error('Failed to transform image');
     } finally {
       setIsLoading(false);
       setProcessingPhase(null);

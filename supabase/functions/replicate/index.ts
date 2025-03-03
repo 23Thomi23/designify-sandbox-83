@@ -16,7 +16,11 @@ serve(async (req) => {
   try {
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
     if (!REPLICATE_API_KEY) {
-      throw new Error('REPLICATE_API_KEY is not set')
+      console.error('REPLICATE_API_KEY is not set')
+      return new Response(JSON.stringify({ error: 'REPLICATE_API_KEY is not set' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500
+      })
     }
 
     const replicate = new Replicate({
@@ -43,18 +47,19 @@ serve(async (req) => {
 
     console.log('Starting image transformation with prompt:', prompt)
 
-    // Start the initial transformation
+    // Start the initial transformation - Using an updated model version
     try {
+      // Try the more recent SDXL model version
       const transformedImage = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        "stability-ai/sdxl:c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
         {
           input: {
             image: image,
             prompt: prompt,
-            guidance_scale: 7.5,
+            guidance_scale: 5.0, // Reduced from 7.5 for more stable results
             negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls, mirror, mirrored",
             prompt_strength: 0.8,
-            num_inference_steps: 25
+            num_inference_steps: 20 // Reduced from 25 for faster processing
           }
         }
       );
@@ -81,25 +86,35 @@ serve(async (req) => {
         })
       }
 
-      // Now upscale the transformed image using Clarity Upscaler
-      const upscaledImage = await replicate.run(
-        "philz1337x/clarity-upscaler:0e0f77efdf4a2fee77d2f2c0414dff763fc65fe2783786a12cc4c03a81adc79d",
-        {
-          input: {
-            image: imageToUpscale,
-            upscale: 2,
-            prompt: "HD detailed photograph with crisp details, sharp, high quality"
+      // Now upscale the transformed image using Clarity Upscaler with updated model version
+      try {
+        const upscaledImage = await replicate.run(
+          "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
+          {
+            input: {
+              image: imageToUpscale,
+              scale: 2,
+              face_enhance: true
+            }
           }
-        }
-      );
+        );
 
-      console.log('Upscaling completed successfully')
+        console.log('Upscaling completed successfully')
 
-      return new Response(JSON.stringify({ output: upscaledImage }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
+        return new Response(JSON.stringify({ output: upscaledImage }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      } catch (upscaleError) {
+        console.error('Error during upscaling:', upscaleError)
+        
+        // If upscaling fails, return the original transformed image as a fallback
+        console.log('Returning original transformed image without upscaling')
+        return new Response(JSON.stringify({ output: imageToUpscale, warning: "Upscaling failed, returning original transformed image" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
     } catch (transformError) {
-      console.error('Error during transformation or upscaling:', transformError)
+      console.error('Error during transformation:', transformError)
       return new Response(JSON.stringify({ 
         error: 'Error processing image', 
         details: transformError.message || 'Unknown error'
