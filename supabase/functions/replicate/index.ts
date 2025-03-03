@@ -31,8 +31,8 @@ serve(async (req) => {
 
     console.log('Starting image transformation with prompt:', prompt)
 
-    // Start the prediction
-    const output = await replicate.run(
+    // Start the initial transformation
+    const transformedImage = await replicate.run(
       "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
       {
         input: {
@@ -46,9 +46,28 @@ serve(async (req) => {
       }
     );
 
-    console.log('Transformation completed successfully')
+    console.log('Initial transformation completed, starting upscaling')
 
-    return new Response(JSON.stringify({ output }), {
+    // If transformedImage is not a URL string, handle accordingly
+    if (!transformedImage || typeof transformedImage !== 'string') {
+      throw new Error('Initial image transformation failed or returned unexpected format')
+    }
+
+    // Now upscale the transformed image using Clarity Upscaler
+    const upscaledImage = await replicate.run(
+      "philz1337x/clarity-upscaler:0e0f77efdf4a2fee77d2f2c0414dff763fc65fe2783786a12cc4c03a81adc79d",
+      {
+        input: {
+          image: transformedImage,
+          upscale: 2,
+          prompt: "HD detailed photograph with crisp details, sharp, high quality"
+        }
+      }
+    );
+
+    console.log('Upscaling completed successfully')
+
+    return new Response(JSON.stringify({ output: upscaledImage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
 

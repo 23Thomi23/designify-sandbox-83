@@ -56,6 +56,7 @@ const Index = () => {
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [processingPhase, setProcessingPhase] = useState<string | null>(null);
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
@@ -84,6 +85,8 @@ const Index = () => {
     }
 
     setIsLoading(true);
+    setProcessingPhase('Transforming your space...');
+    
     try {
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
@@ -95,6 +98,8 @@ const Index = () => {
       const stylePrompt = STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS];
       const fullPrompt = `${roomPrefix}${stylePrompt}`;
 
+      setProcessingPhase('Applying design style and upscaling for clarity...');
+      
       const { data: functionData, error: functionError } = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
@@ -111,12 +116,13 @@ const Index = () => {
       }
 
       setTransformedImage(functionData.output);
-      toast.success('Transformation complete!');
+      toast.success('Transformation complete with enhanced clarity!');
     } catch (error) {
       toast.error('Failed to transform image');
       console.error('Transformation error:', error);
     } finally {
       setIsLoading(false);
+      setProcessingPhase(null);
     }
   };
 
@@ -131,6 +137,7 @@ const Index = () => {
           originalPreview={originalPreview}
           transformedImage={transformedImage}
           isLoading={isLoading}
+          processingPhase={processingPhase}
           styles={STYLES}
           onImageSelect={handleImageSelect}
           onStyleSelect={handleStyleSelect}
