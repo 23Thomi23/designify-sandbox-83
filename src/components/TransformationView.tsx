@@ -9,6 +9,7 @@ interface TransformationViewProps {
   transformedImage: string | null;
   isLoading?: boolean;
   processingPhase?: string | null;
+  processingProgress?: number;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export const TransformationView = ({
   transformedImage,
   isLoading = false,
   processingPhase = null,
+  processingProgress = 0,
   className,
 }: TransformationViewProps) => {
   const handleDownload = async () => {
@@ -65,7 +67,7 @@ export const TransformationView = ({
             {processingPhase && (
               <div className="text-center space-y-3 w-full max-w-xs">
                 <p className="text-sm font-medium">{processingPhase}</p>
-                <Progress value={65} className="h-2" />
+                <Progress value={processingProgress} className="h-2" />
               </div>
             )}
           </div>

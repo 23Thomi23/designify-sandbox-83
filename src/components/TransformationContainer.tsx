@@ -15,6 +15,7 @@ interface TransformationContainerProps {
   transformedImage: string | null;
   isLoading: boolean;
   processingPhase?: string | null;
+  processingProgress?: number;
   error?: string | null;
   styles: Style[];
   onImageSelect: (file: File) => void;
@@ -31,6 +32,7 @@ export const TransformationContainer = ({
   transformedImage,
   isLoading,
   processingPhase,
+  processingProgress = 0,
   error,
   styles,
   onImageSelect,
@@ -93,6 +95,7 @@ export const TransformationContainer = ({
           transformedImage={transformedImage}
           isLoading={isLoading}
           processingPhase={processingPhase}
+          processingProgress={processingProgress}
         />
       </div>
     </div>

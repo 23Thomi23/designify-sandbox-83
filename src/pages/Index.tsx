@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
@@ -56,6 +57,7 @@ const Index = () => {
   const [transformedImage, setTransformedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [processingPhase, setProcessingPhase] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleImageSelect = (file: File) => {
@@ -89,6 +91,7 @@ const Index = () => {
 
     setIsLoading(true);
     setProcessingPhase('Analyzing your space...');
+    setProcessingProgress(10);
     setError(null);
     setTransformedImage(null);
     
@@ -104,6 +107,13 @@ const Index = () => {
       const fullPrompt = `${roomPrefix}${stylePrompt} High quality, photorealistic.`;
 
       setProcessingPhase('Applying design style...');
+      setProcessingProgress(25);
+      
+      // Log the start of the Supabase function call for easier debugging
+      console.log('Calling Replicate function with:', { 
+        prompt: fullPrompt, 
+        imageSize: encodeURI(base64Image).split(',').length 
+      });
       
       const response = await supabase.functions.invoke('replicate', {
         body: {
@@ -129,6 +139,7 @@ const Index = () => {
       }
 
       setProcessingPhase('Enhancing with AI upscaler...');
+      setProcessingProgress(75);
 
       if (!response.data.output) {
         console.error('No output received from API');
@@ -137,6 +148,10 @@ const Index = () => {
         return;
       }
 
+      // Short delay to ensure progress is visible to user
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setProcessingProgress(100);
+      
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
     } catch (error) {
@@ -146,6 +161,7 @@ const Index = () => {
     } finally {
       setIsLoading(false);
       setProcessingPhase(null);
+      setProcessingProgress(0);
     }
   };
 
@@ -161,6 +177,7 @@ const Index = () => {
           transformedImage={transformedImage}
           isLoading={isLoading}
           processingPhase={processingPhase}
+          processingProgress={processingProgress}
           error={error}
           styles={STYLES}
           onImageSelect={handleImageSelect}
