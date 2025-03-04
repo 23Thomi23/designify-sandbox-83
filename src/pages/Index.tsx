@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
@@ -42,11 +41,11 @@ const STYLES: Style[] = [
 ];
 
 const STYLE_PROMPTS = {
-  minimalista: "Minimalist style with clean lines, functional furniture, and soft neutral tones.",
-  moderno: "Modern design with sleek furniture, bold contrasts, and integrated lighting.",
-  contemporaneo: "Contemporary style with elegant finishes, ergonomic furniture, and soft lighting.",
-  industrial: "Industrial look with exposed materials, metal accents, and rustic textures.",
-  rustico: "Rustic design with earthy tones, wood elements, and cozy decor."
+  minimalista: "A minimalist style with clean lines, functional furniture, and soft neutral tones.",
+  moderno: "A modern style with clean lines, functional furniture, and soft neutral tones.",
+  contemporaneo: "A contemporary style with clean lines, functional furniture, and soft neutral tones.",
+  rustico: "A rustic style with clean lines, functional furniture, and soft neutral tones.",
+  industrial: "An industrial style with clean lines, functional furniture, and soft neutral tones."
 };
 
 const Index = () => {
