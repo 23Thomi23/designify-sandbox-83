@@ -47,19 +47,18 @@ serve(async (req) => {
 
     console.log('Starting image transformation with prompt:', prompt)
 
-    // Start the initial transformation - Using an updated model version
+    // Start the initial transformation with the new adirik/interior-design model
     try {
-      // Try the more recent SDXL model version
       const transformedImage = await replicate.run(
-        "stability-ai/sdxl:c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
+        "adirik/interior-design",
         {
           input: {
             image: image,
             prompt: prompt,
-            guidance_scale: 5.0, // Reduced from 7.5 for more stable results
+            guidance_scale: 5.0,
             negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls, mirror, mirrored",
             prompt_strength: 0.53,
-            num_inference_steps: 20 // Reduced from 25 for faster processing
+            num_inference_steps: 20
           }
         }
       );
@@ -86,10 +85,10 @@ serve(async (req) => {
         })
       }
 
-      // Now upscale the transformed image using Clarity Upscaler with updated model version
+      // Now upscale the transformed image using the new philz1337x/clarity-upscaler model
       try {
         const upscaledImage = await replicate.run(
-          "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
+          "philz1337x/clarity-upscaler",
           {
             input: {
               image: imageToUpscale,
