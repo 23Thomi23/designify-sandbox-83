@@ -96,6 +96,7 @@ const Index = () => {
     setTransformedImage(null);
     
     try {
+      // Convert image to base64
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -115,6 +116,7 @@ const Index = () => {
         imageSize: encodeURI(base64Image).split(',').length 
       });
       
+      // Call the Supabase function
       const response = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
@@ -124,16 +126,18 @@ const Index = () => {
 
       console.log("Replicate function response:", response);
 
+      // Handle errors from Supabase functions
       if (response.error) {
         console.error('Supabase function error:', response.error);
-        setError(`Error: ${response.error.message || 'Failed to process image'}`);
+        setError(`Service error: ${response.error.message || 'Failed to process image'}. Please try again later.`);
         toast.error('Failed to transform image');
         return;
       }
 
-      if (response.data.error) {
+      // Handle errors from Replicate API
+      if (response.data && response.data.error) {
         console.error('Replicate API error:', response.data.error);
-        setError(`API Error: ${response.data.error || 'Failed to process image'}`);
+        setError(`API error: ${response.data.error || 'Failed to process image'}. Please try a different image.`);
         toast.error('Failed to transform image');
         return;
       }
@@ -141,9 +145,9 @@ const Index = () => {
       setProcessingPhase('Enhancing with AI upscaler...');
       setProcessingProgress(75);
 
-      if (!response.data.output) {
+      if (!response.data || !response.data.output) {
         console.error('No output received from API');
-        setError('Error: No image was returned from the service');
+        setError('Error: No image was returned from the service. Please try a different image.');
         toast.error('Failed to transform image');
         return;
       }
@@ -152,11 +156,12 @@ const Index = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       setProcessingProgress(100);
       
+      // Set the transformed image
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Transformation error:', error);
-      setError(`Error: ${error?.message || 'An unexpected error occurred'}`);
+      setError(`Error: ${error?.message || 'An unexpected error occurred'}. Please try again.`);
       toast.error('Failed to transform image');
     } finally {
       setIsLoading(false);
