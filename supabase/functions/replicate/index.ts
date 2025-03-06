@@ -47,19 +47,18 @@ serve(async (req) => {
 
     console.log('Starting image transformation with prompt:', prompt)
 
-    // Verify model exists before attempting to use it
+    // Using the new adirik/interior-design model
     try {
-      // Using stability-ai/sdxl which is a reliable model
       const transformedImage = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        "adirik/interior-design:76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38",
         {
           input: {
-            prompt: prompt,
             image: image,
-            strength: 0.53,
-            guidance_scale: 7.5,
-            num_inference_steps: 25,
-            negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls"
+            prompt: prompt,
+            guidance_scale: 5.0,
+            negative_prompt: "lowres, watermark, banner, logo, watermark, contactinfo, text, deformed, blurry, blur, out of focus, out of frame, surreal, extra, ugly, upholstered walls, fabric walls, plush walls, mirror, mirrored",
+            prompt_strength: 0.53,
+            num_inference_steps: 20
           }
         }
       );
@@ -86,22 +85,40 @@ serve(async (req) => {
         })
       }
 
-      // Now upscale the transformed image using a reliable upscaler model
+      // Now upscale the transformed image using the new philz1337x/clarity-upscaler model
       try {
         const upscaledImage = await replicate.run(
-          "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
+          "philz1337x/clarity-upscaler:dfad41707589d68ecdccd1dfa600d55a208f9310748e44bfe35b4a6291453d5e",
           {
             input: {
-              image: imageToUpscale,
-              scale: 2,
-              face_enhance: true
+              image: imageToUpscale
             }
           }
         );
 
         console.log('Upscaling completed successfully')
+        
+        // Handle the output based on its format
+        let finalImage;
+        
+        if (Array.isArray(upscaledImage) && upscaledImage.length > 0) {
+          finalImage = upscaledImage[0];
+          console.log('Using first image from upscaled array')
+        } else if (typeof upscaledImage === 'string') {
+          finalImage = upscaledImage;
+          console.log('Using string URL from upscaler')
+        } else if (upscaledImage && typeof upscaledImage === 'object') {
+          // If it's an object with numbered keys (as shown in the example)
+          finalImage = upscaledImage[0] || Object.values(upscaledImage)[0];
+          console.log('Using first image from upscaled object')
+        } else {
+          console.error('Unexpected format returned from upscaler:', typeof upscaledImage)
+          // Fall back to the original transformed image
+          finalImage = imageToUpscale;
+          console.log('Falling back to original transformed image due to unexpected upscaler format')
+        }
 
-        return new Response(JSON.stringify({ output: upscaledImage }), {
+        return new Response(JSON.stringify({ output: finalImage }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         })
       } catch (upscaleError) {
