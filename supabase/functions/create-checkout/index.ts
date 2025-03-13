@@ -8,14 +8,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-// Map plan IDs to Stripe product IDs
+// Map plan IDs to Stripe product IDs with multiple possible database naming variations
 const PLAN_PRODUCT_MAP = {
-  // Assuming these are the database plan IDs that map to your Stripe products
-  // You'll need to replace these with your actual database plan IDs
+  // Standard naming - lowercase without spaces
   'basic': 'prod_Rw6uZtBUhYP4nK',
   'professional': 'prod_Rw6vNNtU27aVfE',
   'business': 'prod_Rw6wuuBVh4OrbN',
-  'initial': 'prod_Rw6uDCgGcVASwd'
+  'initial': 'prod_Rw6uDCgGcVASwd',
+  
+  // Variations with spaces
+  'basic plan': 'prod_Rw6uZtBUhYP4nK',
+  'professional plan': 'prod_Rw6vNNtU27aVfE',
+  'business plan': 'prod_Rw6wuuBVh4OrbN',
+  'initial plan': 'prod_Rw6uDCgGcVASwd',
+  
+  // Variations with capitalization
+  'Basic': 'prod_Rw6uZtBUhYP4nK',
+  'Professional': 'prod_Rw6vNNtU27aVfE',
+  'Business': 'prod_Rw6wuuBVh4OrbN',
+  'Initial': 'prod_Rw6uDCgGcVASwd',
+  
+  // Variations with spaces and capitalization
+  'Basic Plan': 'prod_Rw6uZtBUhYP4nK',
+  'Professional Plan': 'prod_Rw6vNNtU27aVfE',
+  'Business Plan': 'prod_Rw6wuuBVh4OrbN',
+  'Initial Plan': 'prod_Rw6uDCgGcVASwd'
 }
 
 serve(async (req) => {
@@ -115,9 +132,28 @@ serve(async (req) => {
       customerId = customerData.customer_id
     }
 
-    // Get the product ID based on the plan name (converting to lowercase and removing spaces for mapping)
-    const planKey = plan.name.toLowerCase().replace(/\s+/g, '')
-    const productId = PLAN_PRODUCT_MAP[planKey] || PLAN_PRODUCT_MAP.basic // Default to basic if not found
+    // Try direct matching with plan name first (exact match, case-sensitive)
+    let productId = PLAN_PRODUCT_MAP[plan.name]
+    
+    // If not found, try lowercase version
+    if (!productId) {
+      productId = PLAN_PRODUCT_MAP[plan.name.toLowerCase()]
+    }
+    
+    // If still not found, try removing spaces and lowercase
+    if (!productId) {
+      const planKey = plan.name.toLowerCase().replace(/\s+/g, '')
+      productId = PLAN_PRODUCT_MAP[planKey]
+    }
+    
+    // Log what plan name we're trying to match
+    console.log('Matching plan name:', plan.name, 'to product ID:', productId)
+    
+    // If still no match, use basic as default
+    if (!productId) {
+      console.log('No mapping found for plan name:', plan.name, 'using default basic plan')
+      productId = PLAN_PRODUCT_MAP.basic
+    }
     
     // Find the prices for the product
     const { data: prices } = await stripe.prices.list({
