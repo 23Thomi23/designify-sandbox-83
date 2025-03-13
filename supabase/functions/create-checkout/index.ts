@@ -8,6 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
+// Map plan IDs to Stripe product IDs
+const PLAN_PRODUCT_MAP = {
+  // Assuming these are the database plan IDs that map to your Stripe products
+  // You'll need to replace these with your actual database plan IDs
+  'basic': 'prod_Rw6uZtBUhYP4nK',
+  'professional': 'prod_Rw6vNNtU27aVfE',
+  'business': 'prod_Rw6wuuBVh4OrbN',
+  'initial': 'prod_Rw6uDCgGcVASwd'
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -105,23 +115,32 @@ serve(async (req) => {
       customerId = customerData.customer_id
     }
 
+    // Get the product ID based on the plan name (converting to lowercase and removing spaces for mapping)
+    const planKey = plan.name.toLowerCase().replace(/\s+/g, '')
+    const productId = PLAN_PRODUCT_MAP[planKey] || PLAN_PRODUCT_MAP.basic // Default to basic if not found
+    
+    // Find the prices for the product
+    const { data: prices } = await stripe.prices.list({
+      product: productId,
+      active: true,
+      limit: 1,
+    })
+
+    if (!prices || prices.length === 0) {
+      console.error('No prices found for product:', productId)
+      return new Response(JSON.stringify({ error: 'No pricing available for this plan' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400
+      })
+    }
+
     // Create Stripe session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: plan.name,
-              description: `${plan.included_images} images per month`,
-            },
-            unit_amount: Math.round(plan.price * 100), // Convert to cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: prices[0].id,
           quantity: 1,
         },
       ],
