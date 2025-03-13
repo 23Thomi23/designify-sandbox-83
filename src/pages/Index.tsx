@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
@@ -65,7 +64,6 @@ const Index = () => {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
   useEffect(() => {
-    // Get current user session
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
@@ -112,7 +110,6 @@ const Index = () => {
     setTransformedImage(null);
     
     try {
-      // Convert image to base64
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -126,13 +123,11 @@ const Index = () => {
       setProcessingPhase('Applying design style...');
       setProcessingProgress(25);
       
-      // Log the start of the Supabase function call for easier debugging
       console.log('Calling Replicate function with:', { 
         prompt: fullPrompt, 
         imageSize: encodeURI(base64Image).split(',').length 
       });
       
-      // Call the Supabase function with userId
       const response = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
@@ -143,12 +138,10 @@ const Index = () => {
 
       console.log("Replicate function response:", response);
 
-      // Handle subscription limit exceeded
       if (response.data && response.data.limitExceeded) {
         setError('You have reached your subscription limit');
-        // Fetch subscription plans to show upgrade options
         const { data: plans } = await supabase
-          .from('subscription_plans')
+          .from('subscription_plans' as any)
           .select('*')
           .order('price', { ascending: true });
           
@@ -159,7 +152,6 @@ const Index = () => {
         return;
       }
 
-      // Handle errors from Supabase functions
       if (response.error) {
         console.error('Supabase function error:', response.error);
         setError(`Service error: ${response.error.message || 'Failed to process image'}. Please try again later.`);
@@ -167,7 +159,6 @@ const Index = () => {
         return;
       }
 
-      // Handle errors from Replicate API
       if (response.data && response.data.error) {
         console.error('Replicate API error:', response.data.error);
         setError(`API error: ${response.data.error || 'Failed to process image'}. Please try a different image.`);
@@ -185,11 +176,9 @@ const Index = () => {
         return;
       }
 
-      // Short delay to ensure progress is visible to user
       await new Promise(resolve => setTimeout(resolve, 800));
       setProcessingProgress(100);
       
-      // Set the transformed image
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
     } catch (error: any) {

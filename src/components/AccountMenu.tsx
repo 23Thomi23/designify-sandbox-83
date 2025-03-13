@@ -27,9 +27,9 @@ export function AccountMenu() {
       if (session?.user) {
         setUser(session.user);
         
-        // Fetch user subscription
+        // Fetch user subscription with type assertion to avoid TypeScript errors
         const { data: subscriptionData, error } = await supabase
-          .from('user_subscriptions')
+          .from('user_subscriptions' as any)
           .select(`
             *,
             subscription_plans:subscription_id (

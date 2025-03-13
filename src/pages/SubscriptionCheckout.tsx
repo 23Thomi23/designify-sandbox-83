@@ -25,7 +25,7 @@ const SubscriptionCheckout = () => {
     const fetchPlanDetails = async () => {
       try {
         const { data, error } = await supabase
-          .from('subscription_plans')
+          .from('subscription_plans' as any)
           .select('*')
           .eq('id', planId)
           .single();
