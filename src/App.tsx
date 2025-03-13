@@ -7,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import AccountPage from "./pages/AccountPage";
+import SubscriptionCheckout from "./pages/SubscriptionCheckout";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import SubscriptionCancel from "./pages/SubscriptionCancel";
 import { AuthCheck } from "./components/AuthCheck";
 
 const queryClient = new QueryClient();
@@ -27,6 +31,38 @@ const App = () => (
             } 
           />
           <Route path="/auth" element={<Auth />} />
+          <Route 
+            path="/account" 
+            element={
+              <AuthCheck>
+                <AccountPage />
+              </AuthCheck>
+            } 
+          />
+          <Route 
+            path="/subscription/checkout" 
+            element={
+              <AuthCheck>
+                <SubscriptionCheckout />
+              </AuthCheck>
+            } 
+          />
+          <Route 
+            path="/subscription/success" 
+            element={
+              <AuthCheck>
+                <SubscriptionSuccess />
+              </AuthCheck>
+            } 
+          />
+          <Route 
+            path="/subscription/cancel" 
+            element={
+              <AuthCheck>
+                <SubscriptionCancel />
+              </AuthCheck>
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

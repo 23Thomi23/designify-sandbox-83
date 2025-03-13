@@ -1,32 +1,26 @@
-import { Button } from "./ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-export const Header = () => {
-  const handleLogout = async () => {
-    try {
-      const {
-        error
-      } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error("Error logging out");
-      console.error("Error:", error);
-    }
-  };
-  return <header className="space-y-6 relative z-10">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-tight bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent sm:text-5xl">
-            AI Interior Design
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
-            Transform your space with AI-powered interior design. Upload a photo and let our AI suggest beautiful transformations.
-          </p>
-        </div>
-        <Button variant="outline" onClick={handleLogout} className="bg-secondary hover:bg-secondary/80 text-secondary-foreground bg-red-600 hover:bg-red-500">
-          Logout
-        </Button>
+
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { AccountMenu } from '@/components/AccountMenu';
+
+export function Header() {
+  return (
+    <header className="flex justify-between items-center py-4">
+      <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 size-8 rounded-full"></div>
+          <span className="text-lg font-semibold tracking-tight">EstateVision</span>
+        </Link>
       </div>
-    </header>;
-};
+      <div className="flex items-center gap-4">
+        <Link to="/about">
+          <Button variant="ghost">About</Button>
+        </Link>
+        <Link to="/pricing">
+          <Button variant="ghost">Pricing</Button>
+        </Link>
+        <AccountMenu />
+      </div>
+    </header>
+  );
+}

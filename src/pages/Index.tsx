@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
 import { ApiKeyDialog } from '@/components/ApiKeyDialog';
@@ -7,6 +7,7 @@ import { TransformationContainer } from '@/components/TransformationContainer';
 import { Style } from '@/components/StyleSelector';
 import { Room } from '@/components/RoomSelector';
 import { supabase } from '@/integrations/supabase/client';
+import { SubscriptionLimitDialog } from '@/components/SubscriptionLimitDialog';
 
 const STYLES: Style[] = [
   {
@@ -59,6 +60,21 @@ const Index = () => {
   const [processingPhase, setProcessingPhase] = useState<string | null>(null);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+
+  useEffect(() => {
+    // Get current user session
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
@@ -116,15 +132,32 @@ const Index = () => {
         imageSize: encodeURI(base64Image).split(',').length 
       });
       
-      // Call the Supabase function
+      // Call the Supabase function with userId
       const response = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
           prompt: fullPrompt,
+          userId: userId
         }
       });
 
       console.log("Replicate function response:", response);
+
+      // Handle subscription limit exceeded
+      if (response.data && response.data.limitExceeded) {
+        setError('You have reached your subscription limit');
+        // Fetch subscription plans to show upgrade options
+        const { data: plans } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .order('price', { ascending: true });
+          
+        if (plans) {
+          setSubscriptionData(plans);
+          setShowLimitDialog(true);
+        }
+        return;
+      }
 
       // Handle errors from Supabase functions
       if (response.error) {
@@ -191,6 +224,13 @@ const Index = () => {
           onTransform={handleTransformation}
         />
       </div>
+      {showLimitDialog && subscriptionData && (
+        <SubscriptionLimitDialog 
+          open={showLimitDialog}
+          onClose={() => setShowLimitDialog(false)}
+          plans={subscriptionData}
+        />
+      )}
     </div>
   );
 };

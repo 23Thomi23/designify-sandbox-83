@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Replicate from "https://esm.sh/replicate@0.25.2"
+import { supabaseClient } from "../_shared/supabase-client.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,7 +28,7 @@ serve(async (req) => {
       auth: REPLICATE_API_KEY,
     });
 
-    const { image, prompt } = await req.json()
+    const { image, prompt, userId } = await req.json()
 
     if (!image) {
       console.error('Missing required field: image is required')
@@ -45,9 +46,52 @@ serve(async (req) => {
       })
     }
 
+    // Check user subscription if userId is provided
+    // Only apply limits to new users; existing users continue without restrictions
+    if (userId) {
+      try {
+        const supabase = supabaseClient();
+        
+        // Check if user is a new user (registered after subscription system implementation)
+        const { data: user, error: userError } = await supabase
+          .from('profiles')
+          .select('created_at, is_legacy_user')
+          .eq('id', userId)
+          .single();
+          
+        if (userError) {
+          console.error('Error fetching user:', userError);
+        } else if (user && !user.is_legacy_user) {
+          // Only apply subscription limits to non-legacy users
+          const { data: usage, error: usageError } = await supabase
+            .from('image_consumption')
+            .select('available_images, used_images')
+            .eq('user_id', userId)
+            .single();
+            
+          if (usageError) {
+            console.error('Error fetching user usage:', usageError);
+          } else if (usage && usage.used_images >= usage.available_images) {
+            return new Response(JSON.stringify({ 
+              error: 'Image limit exceeded', 
+              message: 'You have reached your subscription limit. Please upgrade your plan to process more images.',
+              limitExceeded: true 
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 403
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        // Continue processing if there's an error checking the subscription
+        // This ensures existing functionality isn't disrupted
+      }
+    }
+
     console.log('Starting image transformation with prompt:', prompt)
 
-    // Using the new adirik/interior-design model
+    // Using the adirik/interior-design model
     try {
       const transformedImage = await replicate.run(
         "adirik/interior-design:76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38",
@@ -85,7 +129,7 @@ serve(async (req) => {
         })
       }
 
-      // Now upscale the transformed image using the new philz1337x/clarity-upscaler model
+      // Now upscale the transformed image using philz1337x/clarity-upscaler model
       try {
         const upscaledImage = await replicate.run(
           "philz1337x/clarity-upscaler:dfad41707589d68ecdccd1dfa600d55a208f9310748e44bfe35b4a6291453d5e",
@@ -116,6 +160,48 @@ serve(async (req) => {
           // Fall back to the original transformed image
           finalImage = imageToUpscale;
           console.log('Falling back to original transformed image due to unexpected upscaler format')
+        }
+
+        // Update image usage count for non-legacy users
+        if (userId) {
+          try {
+            const supabase = supabaseClient();
+            
+            // Check if user is a new user (registered after subscription system implementation)
+            const { data: user, error: userError } = await supabase
+              .from('profiles')
+              .select('is_legacy_user')
+              .eq('id', userId)
+              .single();
+              
+            if (userError) {
+              console.error('Error fetching user:', userError);
+            } else if (user && !user.is_legacy_user) {
+              // Update usage count for non-legacy users
+              const { error: updateError } = await supabase.rpc('increment_image_usage', { user_id: userId });
+              
+              if (updateError) {
+                console.error('Error updating image usage:', updateError);
+              }
+              
+              // Record processing history
+              const { error: historyError } = await supabase
+                .from('processing_history')
+                .insert([{ 
+                  user_id: userId, 
+                  original_image: image.substring(0, 255), // Limit string length to avoid DB issues
+                  enhanced_image: finalImage.substring(0, 255),
+                  processing_type: 'interior-design'
+                }]);
+                
+              if (historyError) {
+                console.error('Error recording processing history:', historyError);
+              }
+            }
+          } catch (error) {
+            console.error('Error updating usage statistics:', error);
+            // Continue processing if there's an error updating stats
+          }
         }
 
         return new Response(JSON.stringify({ output: finalImage }), {
