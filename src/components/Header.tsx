@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/components/AccountMenu';
+import { History } from 'lucide-react';
 
 export function Header() {
   return (
@@ -13,11 +14,11 @@ export function Header() {
         </Link>
       </div>
       <div className="flex items-center gap-4">
-        <Link to="/about">
-          <Button variant="ghost">About</Button>
-        </Link>
-        <Link to="/pricing">
-          <Button variant="ghost">Pricing</Button>
+        <Link to="/history">
+          <Button variant="ghost" className="flex items-center gap-2">
+            <History size={16} />
+            History
+          </Button>
         </Link>
         <AccountMenu />
       </div>

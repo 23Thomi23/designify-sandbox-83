@@ -12,6 +12,7 @@ import SubscriptionCheckout from "./pages/SubscriptionCheckout";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import History from "./pages/History";
 import { AuthCheck } from "./components/AuthCheck";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,14 @@ const App = () => (
             element={
               <AuthCheck>
                 <AccountPage />
+              </AuthCheck>
+            } 
+          />
+          <Route 
+            path="/history" 
+            element={
+              <AuthCheck>
+                <History />
               </AuthCheck>
             } 
           />
