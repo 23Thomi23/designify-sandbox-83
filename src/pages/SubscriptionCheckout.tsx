@@ -5,14 +5,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const SubscriptionCheckout = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [creatingCheckout, setCreatingCheckout] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [detailedError, setDetailedError] = useState<string | null>(null);
   
   useEffect(() => {
     const planId = searchParams.get('plan');
@@ -25,7 +30,7 @@ const SubscriptionCheckout = () => {
     const fetchPlanDetails = async () => {
       try {
         const { data, error } = await supabase
-          .from('subscription_plans' as any)
+          .from('subscription_plans')
           .select('*')
           .eq('id', planId)
           .single();
@@ -50,6 +55,7 @@ const SubscriptionCheckout = () => {
   const handleCheckout = async () => {
     setCreatingCheckout(true);
     setError(null);
+    setDetailedError(null);
     
     try {
       // Get current user
@@ -71,15 +77,33 @@ const SubscriptionCheckout = () => {
       if (error) {
         console.error('Error creating checkout:', error);
         setError('Failed to create checkout session. Please try again later.');
+        setDetailedError(JSON.stringify(error));
+        toast({
+          variant: 'destructive',
+          title: 'Checkout Failed',
+          description: 'Could not create checkout session. Please try again.',
+        });
       } else if (data?.url) {
         // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
         setError('Invalid response from server. Please try again later.');
+        setDetailedError(JSON.stringify(data));
+        toast({
+          variant: 'destructive',
+          title: 'Checkout Failed',
+          description: 'Received invalid response from server.',
+        });
       }
     } catch (error) {
       console.error('Error:', error);
       setError('An unexpected error occurred. Please try again later.');
+      setDetailedError(error instanceof Error ? error.message : String(error));
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+      });
     } finally {
       setCreatingCheckout(false);
     }
@@ -123,9 +147,19 @@ const SubscriptionCheckout = () => {
               </div>
               
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
-                  {error}
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {error}
+                    {detailedError && (
+                      <details className="mt-2 text-xs">
+                        <summary>Technical Details</summary>
+                        <pre className="mt-2 whitespace-pre-wrap">{detailedError}</pre>
+                      </details>
+                    )}
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
           ) : (
@@ -146,7 +180,7 @@ const SubscriptionCheckout = () => {
           <Button 
             variant="outline" 
             className="w-full" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/subscription')}
           >
             Cancel
           </Button>

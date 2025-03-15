@@ -8,31 +8,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-// Map plan IDs to Stripe product IDs with multiple possible database naming variations
-const PLAN_PRODUCT_MAP = {
+// Map plan names to Stripe price IDs (not product IDs)
+const PLAN_PRICE_MAP = {
   // Standard naming - lowercase without spaces
-  'basic': 'prod_Rw6uZtBUhYP4nK',
-  'professional': 'prod_Rw6vNNtU27aVfE',
-  'business': 'prod_Rw6wuuBVh4OrbN',
-  'initial': 'prod_Rw6uDCgGcVASwd',
+  'basic': 'price_1OwhUCGy89EHd6dDXqixE95G',
+  'professional': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
+  'business': 'price_1OwhXJGy89EHd6dDkgFytKkm',
+  'initial': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
   
   // Variations with spaces
-  'basic plan': 'prod_Rw6uZtBUhYP4nK',
-  'professional plan': 'prod_Rw6vNNtU27aVfE',
-  'business plan': 'prod_Rw6wuuBVh4OrbN',
-  'initial plan': 'prod_Rw6uDCgGcVASwd',
+  'basic plan': 'price_1OwhUCGy89EHd6dDXqixE95G',
+  'professional plan': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
+  'business plan': 'price_1OwhXJGy89EHd6dDkgFytKkm',
+  'initial plan': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
   
   // Variations with capitalization
-  'Basic': 'prod_Rw6uZtBUhYP4nK',
-  'Professional': 'prod_Rw6vNNtU27aVfE',
-  'Business': 'prod_Rw6wuuBVh4OrbN',
-  'Initial': 'prod_Rw6uDCgGcVASwd',
+  'Basic': 'price_1OwhUCGy89EHd6dDXqixE95G',
+  'Professional': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
+  'Business': 'price_1OwhXJGy89EHd6dDkgFytKkm',
+  'Initial': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
   
   // Variations with spaces and capitalization
-  'Basic Plan': 'prod_Rw6uZtBUhYP4nK',
-  'Professional Plan': 'prod_Rw6vNNtU27aVfE',
-  'Business Plan': 'prod_Rw6wuuBVh4OrbN',
-  'Initial Plan': 'prod_Rw6uDCgGcVASwd'
+  'Basic Plan': 'price_1OwhUCGy89EHd6dDXqixE95G',
+  'Professional Plan': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
+  'Business Plan': 'price_1OwhXJGy89EHd6dDkgFytKkm',
+  'Initial Plan': 'price_1OwhTbGy89EHd6dDgDI8FQpk'
 }
 
 serve(async (req) => {
@@ -132,51 +132,38 @@ serve(async (req) => {
       customerId = customerData.customer_id
     }
 
-    // Try direct matching with plan name first (exact match, case-sensitive)
-    let productId = PLAN_PRODUCT_MAP[plan.name]
+    // Find the price ID for the plan
+    console.log('Matching plan name:', plan.name)
+    
+    // Try direct matching with plan name
+    let priceId = PLAN_PRICE_MAP[plan.name]
     
     // If not found, try lowercase version
-    if (!productId) {
-      productId = PLAN_PRODUCT_MAP[plan.name.toLowerCase()]
+    if (!priceId) {
+      priceId = PLAN_PRICE_MAP[plan.name.toLowerCase()]
     }
     
     // If still not found, try removing spaces and lowercase
-    if (!productId) {
+    if (!priceId) {
       const planKey = plan.name.toLowerCase().replace(/\s+/g, '')
-      productId = PLAN_PRODUCT_MAP[planKey]
+      priceId = PLAN_PRICE_MAP[planKey]
     }
     
-    // Log what plan name we're trying to match
-    console.log('Matching plan name:', plan.name, 'to product ID:', productId)
+    console.log('Using price ID:', priceId)
     
     // If still no match, use basic as default
-    if (!productId) {
+    if (!priceId) {
       console.log('No mapping found for plan name:', plan.name, 'using default basic plan')
-      productId = PLAN_PRODUCT_MAP.basic
+      priceId = PLAN_PRICE_MAP.basic
     }
     
-    // Find the prices for the product
-    const { data: prices } = await stripe.prices.list({
-      product: productId,
-      active: true,
-      limit: 1,
-    })
-
-    if (!prices || prices.length === 0) {
-      console.error('No prices found for product:', productId)
-      return new Response(JSON.stringify({ error: 'No pricing available for this plan' }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400
-      })
-    }
-
-    // Create Stripe session
+    // Create Stripe session directly with the price ID
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: prices[0].id,
+          price: priceId, // Use the price ID directly
           quantity: 1,
         },
       ],
