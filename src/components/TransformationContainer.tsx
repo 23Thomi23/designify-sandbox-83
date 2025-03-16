@@ -1,11 +1,12 @@
 
-import { ImageUploader } from './ImageUploader';
-import { StyleSelector, Style } from './StyleSelector';
 import { TransformationView } from './TransformationView';
-import { RoomSelector, Room } from './RoomSelector';
-import { Button } from './ui/button';
-import { Wand2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription } from './ui/alert';
+import { Style } from './StyleSelector';
+import { Room } from './RoomSelector';
+import { UploadSection } from './transformation/UploadSection';
+import { RoomSection } from './transformation/RoomSection';
+import { StyleSection } from './transformation/StyleSection';
+import { TransformButton } from './transformation/TransformButton';
+import { ErrorDisplay } from './transformation/ErrorDisplay';
 
 interface TransformationContainerProps {
   selectedImage: File | null;
@@ -43,50 +44,26 @@ export const TransformationContainer = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="space-y-8">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Upload Image</h2>
-          <ImageUploader onImageSelect={onImageSelect} />
-        </div>
+        <UploadSection onImageSelect={onImageSelect} />
         
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Select Room</h2>
-          <RoomSelector
-            selectedRoom={selectedRoom}
-            onRoomSelect={onRoomSelect}
-          />
-        </div>
+        <RoomSection 
+          selectedRoom={selectedRoom}
+          onRoomSelect={onRoomSelect}
+        />
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Select Style</h2>
-          <StyleSelector
-            styles={styles}
-            selectedStyle={selectedStyle}
-            onStyleSelect={onStyleSelect}
-          />
-        </div>
+        <StyleSection 
+          styles={styles}
+          selectedStyle={selectedStyle}
+          onStyleSelect={onStyleSelect}
+        />
 
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p>{error}</p>
-                <p className="text-xs opacity-80">
-                  Try again with a different image or style. If the problem persists, the service might be unavailable.
-                </p>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        <ErrorDisplay error={error} />
 
-        <Button 
+        <TransformButton 
           onClick={onTransform} 
           disabled={!selectedImage || !selectedRoom || isLoading}
-          className="w-full"
-        >
-          {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2" />}
-          {isLoading ? 'Procesando...' : 'Mejorar propiedad'}
-        </Button>
+          isLoading={isLoading}
+        />
       </div>
 
       <div className="lg:col-span-2">
