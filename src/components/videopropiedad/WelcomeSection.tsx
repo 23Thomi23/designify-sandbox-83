@@ -56,7 +56,7 @@ export const WelcomeSection = () => {
       duration: 0.7,
       delay: 0.6
     }} className="mt-16 relative w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-2xl">
-        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2553&auto=format&fit=crop" alt="Transformed property" className="w-full h-auto object-cover rounded-xl" />
+        <img alt="Transformed property" className="w-full h-auto object-cover rounded-xl" src="/lovable-uploads/7f5154b9-bb11-4c39-a177-2156b3a1ce1c.png" />
       </motion.div>
     </section>;
 };
