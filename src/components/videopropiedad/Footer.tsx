@@ -8,7 +8,7 @@ export const Footer = () => {
           <div>
             <div className="flex items-center gap-2 mb-6">
               <div className="bg-white size-8 rounded-full"></div>
-              <span className="text-lg font-semibold tracking-tight">VideoPropiedad</span>
+              <span className="text-lg font-semibold tracking-tight">InmoMejora</span>
             </div>
             <p className="text-gray-400 mb-6">
               Transformamos fotos ordinarias en contenido profesional para el sector inmobiliario.
