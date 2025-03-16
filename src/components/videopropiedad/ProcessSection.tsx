@@ -30,9 +30,7 @@ export const ProcessSection = () => {
       }} transition={{
         duration: 0.7
       }} className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 text-center md:text-5xl">Transformar tus imágenes nunca ha sido tan fácil. 
-
-Solo 4 pasos simples.</h2>
+          <h2 className="text-3xl font-bold mb-4 text-center md:text-5xl">Transformar tus imágenes nunca ha sido tan fácil, Solo en 4 pasos simples.</h2>
           
         </motion.div>
         
