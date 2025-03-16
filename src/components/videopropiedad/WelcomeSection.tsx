@@ -17,7 +17,7 @@ export const WelcomeSection = () => {
         delay: 0.2
       }} className="mb-12">
           <h1 className="text-4xl lg:text-7xl font-bold leading-tight mb-8 text-center md:text-6xl">Transformamos fotos de propiedades en contenido profesional en tiempo récord</h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl text-center px-[20px] mx-[90px]">
             Crea imágenes inmobiliarias de nivel profesional sin esfuerzo. Perfecto para agentes, fotógrafos y gestores de propiedades.
           </p>
         </motion.div>
