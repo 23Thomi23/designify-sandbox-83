@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 export const WelcomeSection = () => {
   const navigate = useNavigate();
-  return <section id="welcome" className="pt-32 pb-20 px-6 md:px-12 min-h-screen flex flex-col justify-center">
+  return <section id="welcome" className="pt-32 pb-20 px-6 md:px-12 min-h-screen flex flex-col justify-center bg-slate-50">
       <div className="max-w-6xl mx-auto">
         <motion.div initial={{
         opacity: 0,

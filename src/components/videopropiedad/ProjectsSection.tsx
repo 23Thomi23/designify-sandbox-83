@@ -21,7 +21,7 @@ const projects = [{
   description: 'Optimización de imágenes para resaltar los espacios y características de la vivienda.'
 }];
 export const ProjectsSection = () => {
-  return <section id="projects" className="py-20 px-6 md:px-12 bg-gray-50">
+  return <section id="projects" className="py-20 px-6 md:px-12 bg-slate-200">
       <div className="max-w-6xl mx-auto">
         <motion.div initial={{
         opacity: 0,
