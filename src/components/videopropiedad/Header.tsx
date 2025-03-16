@@ -25,9 +25,7 @@ export const Header = () => {
         <a href="#contact" className="text-sm font-medium hover:text-gray-600 transition-colors">Contacto</a>
       </nav>
       
-      <Button onClick={() => navigate('/auth')} variant="default" className="hidden md:flex bg-black text-white hover:bg-gray-800">
-        Empezar
-      </Button>
+      <Button onClick={() => navigate('/auth')} variant="default" className="hidden md:flex bg-black text-white hover:bg-gray-800">Iniciar Sesión</Button>
       
       {/* Mobile Menu Button */}
       <div className="md:hidden">
