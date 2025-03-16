@@ -55,10 +55,8 @@ export const ContactSection = () => {
       }} transition={{
         duration: 0.7
       }} className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Contacto</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            ¿Tienes alguna pregunta o necesitas más información? Estamos aquí para ayudarte.
-          </p>
+          <h2 className="text-3xl font-bold mb-4 md:text-6xl">Contacto</h2>
+          
         </motion.div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
@@ -74,7 +72,7 @@ export const ContactSection = () => {
           duration: 0.7
         }} className="space-y-8">
             <div>
-              <h3 className="text-2xl font-bold mb-4 text-center">Hablemos</h3>
+              
               <p className="text-gray-600 text-center">
                 Queremos conocer tu proyecto y cómo podemos ayudarte a mejorar tus imágenes inmobiliarias.
               </p>
