@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { LandingPage } from '@/components/LandingPage';
 import { AuthenticatedPage } from '@/components/AuthenticatedPage';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,10 +27,6 @@ const Index = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <LandingPage />;
   }
 
   return <AuthenticatedPage userId={userId || ''} />;

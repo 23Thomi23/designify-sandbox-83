@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogIn, Wand2, Image, Clock, DollarSign, CheckCircle, ArrowRight } from 'lucide-react';

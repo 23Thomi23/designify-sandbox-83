@@ -14,6 +14,7 @@ import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import History from "./pages/History";
 import { AuthCheck } from "./components/AuthCheck";
+import { LandingPage } from "@/components/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -24,8 +25,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route 
-            path="/" 
+            path="/dashboard" 
             element={
               <AuthCheck>
                 <Index />
