@@ -1,32 +1,35 @@
-
 import { motion } from 'framer-motion';
 import { CheckCircle, Clock, DollarSign, Image } from 'lucide-react';
-
 export const AboutUsSection = () => {
-  return (
-    <section id="about" className="py-20 px-6 md:px-12 bg-gray-50">
+  return <section id="about" className="py-20 px-6 md:px-12 bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }} transition={{
+        duration: 0.7
+      }} className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Sobre Nosotros</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Nos especializamos en transformar imágenes inmobiliarias para que destaquen en el mercado y capten la atención de potenciales compradores.
-          </p>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">Transformar tus imágenes, para que tu inmobiliaria destaque en el mercado y capten la atención de potenciales compradores.</p>
         </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="space-y-8"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          x: -20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.7
+        }} className="space-y-8">
             <h3 className="text-2xl font-bold">Potenciamos tus propiedades con imágenes impactantes</h3>
             <p className="text-gray-600">
               En VideoPropiedad, entendemos que las imágenes de calidad son cruciales para destacar en el mercado inmobiliario. 
@@ -41,7 +44,7 @@ export const AboutUsSection = () => {
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="text-green-600 mt-1" size={20} />
-                <p>Más de 50 estilos de diseño para elegir</p>
+                <p>Te ahorramos un 85% de tiempo</p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="text-green-600 mt-1" size={20} />
@@ -54,12 +57,17 @@ export const AboutUsSection = () => {
             </div>
           </motion.div>
           
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          x: 20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.7
+        }}>
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-xl shadow-lg">
                 <div className="bg-blue-100 p-3 rounded-full text-blue-600 inline-block mb-4">
@@ -100,6 +108,5 @@ export const AboutUsSection = () => {
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
