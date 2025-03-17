@@ -31,7 +31,7 @@ export const WelcomeSection = () => {
       }} transition={{
         duration: 0.7,
         delay: 0.4
-      }} className="flex flex-col sm:flex-row gap-4">
+      }} className="flex flex-col sm:flex-row gap-4 mx-[240px] px-[240px]">
           <Button onClick={() => navigate('/auth')} size="lg" className="bg-black text-white hover:bg-gray-800 gap-2 px-8 py-6 text-lg">
             Comenzar ahora
             <ArrowRight size={18} />
