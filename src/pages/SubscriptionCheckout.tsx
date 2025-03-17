@@ -67,28 +67,28 @@ const SubscriptionCheckout = () => {
       }
       
       // Create checkout session
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const response = await supabase.functions.invoke('create-checkout', {
         body: {
           planId: plan.id,
           userId: session.user.id
         }
       });
       
-      if (error) {
-        console.error('Error creating checkout:', error);
+      if (response.error) {
+        console.error('Error creating checkout:', response.error);
         setError('Failed to create checkout session. Please try again later.');
-        setDetailedError(JSON.stringify(error));
+        setDetailedError(JSON.stringify(response.error));
         toast({
           variant: 'destructive',
           title: 'Checkout Failed',
           description: 'Could not create checkout session. Please try again.',
         });
-      } else if (data?.url) {
+      } else if (response.data?.url) {
         // Redirect to Stripe checkout
-        window.location.href = data.url;
+        window.location.href = response.data.url;
       } else {
         setError('Invalid response from server. Please try again later.');
-        setDetailedError(JSON.stringify(data));
+        setDetailedError(JSON.stringify(response.data));
         toast({
           variant: 'destructive',
           title: 'Checkout Failed',
