@@ -12,8 +12,20 @@ interface AvailablePlansCardProps {
 export const AvailablePlansCard = ({ plans, currentPlanId }: AvailablePlansCardProps) => {
   const navigate = useNavigate();
   
-  const handleUpgradeClick = (planId: string) => {
+  const handleUpgradeClick = (planId: string, planName?: string) => {
+    if (planName === "Basic") {
+      window.location.href = "https://buy.stripe.com/dR68Aj7ON14V1dSfZ0";
+      return;
+    }
+    if (planName === "Professional") {
+      window.location.href = "https://buy.stripe.com/dR6aIrc5328Z09O5kl";
+      return;
+    }
     navigate('/subscription');
+  };
+  
+  const handlePayPerImageClick = () => {
+    window.location.href = "https://buy.stripe.com/5kA2bV0mldRHaOseUU";
   };
   
   return (
@@ -24,6 +36,21 @@ export const AvailablePlansCard = ({ plans, currentPlanId }: AvailablePlansCardP
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Pay per Image option */}
+          <div className="p-4 border rounded-lg">
+            <h3 className="font-semibold text-sm">Pay per Image</h3>
+            <div className="text-xl font-bold my-1">$19.99<span className="text-xs font-normal text-muted-foreground">/pack</span></div>
+            <p className="text-xs text-muted-foreground mb-2">10 images per pack</p>
+            <Button 
+              variant="default"
+              size="sm"
+              className="w-full text-xs"
+              onClick={handlePayPerImageClick}
+            >
+              Buy Pack
+            </Button>
+          </div>
+          
           {plans.map((plan) => (
             <div key={plan.id} className="p-4 border rounded-lg">
               <h3 className="font-semibold text-sm">{plan.name}</h3>
@@ -34,7 +61,7 @@ export const AvailablePlansCard = ({ plans, currentPlanId }: AvailablePlansCardP
                 size="sm"
                 className="w-full text-xs"
                 disabled={currentPlanId === plan.id}
-                onClick={() => handleUpgradeClick(plan.id)}
+                onClick={() => handleUpgradeClick(plan.id, plan.name)}
               >
                 {currentPlanId === plan.id ? "Current Plan" : "Select"}
               </Button>

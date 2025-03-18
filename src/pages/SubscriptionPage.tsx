@@ -128,8 +128,17 @@ const SubscriptionPage = () => {
   };
   
   const handleSubscribe = async (planId: string, planName: string) => {
+    // Direct links for specific plans
     if (planName === "Business") {
       window.location.href = "https://buy.stripe.com/5kA2bV0mldRHaOseUU";
+      return;
+    }
+    if (planName === "Basic") {
+      window.location.href = "https://buy.stripe.com/dR68Aj7ON14V1dSfZ0";
+      return;
+    }
+    if (planName === "Professional") {
+      window.location.href = "https://buy.stripe.com/dR6aIrc5328Z09O5kl";
       return;
     }
     
@@ -330,6 +339,41 @@ const SubscriptionPage = () => {
           <h2 className="text-2xl font-bold mt-10">Available Plans</h2>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Pay Per Image Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pay per Image</CardTitle>
+                <div className="text-2xl font-bold">$19.99<span className="text-sm font-normal text-muted-foreground">/pack</span></div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-muted-foreground">Perfect for occasional users who need just a few transformations</p>
+                <ul className="space-y-2 mt-4">
+                  <li className="flex items-center text-sm">
+                    <span className="mr-2">✓</span>
+                    <span>10 images per pack</span>
+                  </li>
+                  <li className="flex items-center text-sm">
+                    <span className="mr-2">✓</span>
+                    <span>High-quality AI transformations</span>
+                  </li>
+                  <li className="flex items-center text-sm">
+                    <span className="mr-2">✓</span>
+                    <span>No subscription required</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full" 
+                  onClick={() => handleSubscribe("", "Business")}
+                  disabled={creating}
+                >
+                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Buy Pack
+                </Button>
+              </CardFooter>
+            </Card>
+            
             {availablePlans.map((plan) => (
               <Card key={plan.id} className={subscription?.subscription_plans?.id === plan.id 
                 ? 'border-primary' 
