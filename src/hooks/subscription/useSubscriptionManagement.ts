@@ -3,6 +3,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  fetchUserSubscription, 
+  fetchAvailablePlans, 
+  cancelSubscription, 
+  createSubscription,
+  type Subscription,
+  type SubscriptionPlan
+} from './subscription-service';
+import { formatSubscriptionDate, getDirectPlanUrl } from './subscription-utils';
 
 export const useSubscriptionManagement = () => {
   const navigate = useNavigate();
@@ -10,8 +19,8 @@ export const useSubscriptionManagement = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   
   useEffect(() => {
     fetchSubscriptionData();
@@ -26,42 +35,24 @@ export const useSubscriptionManagement = () => {
         return;
       }
       
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plans:subscription_id (
-            id,
-            name,
-            price,
-            included_images,
-            description
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .single();
-        
-      if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', subscriptionError);
+      try {
+        const subscriptionData = await fetchUserSubscription(session.user.id);
+        if (subscriptionData) {
+          setSubscription(subscriptionData);
+        }
+      } catch (error) {
         toast({
           title: 'Error',
           description: 'Failed to load subscription data',
           variant: 'destructive',
         });
-      } else if (subscriptionData) {
-        setSubscription(subscriptionData);
       }
       
-      const { data: plansData, error: plansError } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .order('price', { ascending: true });
-        
-      if (plansError) {
-        console.error('Error fetching plans:', plansError);
-      } else if (plansData) {
+      try {
+        const plansData = await fetchAvailablePlans();
         setAvailablePlans(plansData);
+      } catch (error) {
+        console.error('Error fetching plans:', error);
       }
       
     } catch (error) {
@@ -86,30 +77,21 @@ export const useSubscriptionManagement = () => {
         return;
       }
       
-      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-        body: {
-          subscriptionId: subscription.stripe_subscription_id
-        }
+      if (!subscription?.stripe_subscription_id) {
+        throw new Error('No subscription ID found');
+      }
+      
+      await cancelSubscription(subscription.stripe_subscription_id);
+      
+      toast({
+        title: 'Subscription Cancelled',
+        description: 'Your subscription has been cancelled and will end at the current billing period.',
       });
       
-      if (error) {
-        console.error('Error cancelling subscription:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to cancel subscription. Please try again later.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Subscription Cancelled',
-          description: 'Your subscription has been cancelled and will end at the current billing period.',
-        });
-        
-        setSubscription({
-          ...subscription,
-          cancel_at_period_end: true
-        });
-      }
+      setSubscription({
+        ...subscription,
+        cancel_at_period_end: true
+      });
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -123,17 +105,10 @@ export const useSubscriptionManagement = () => {
   };
   
   const handleSubscribe = async (planId: string, planName: string) => {
-    // Direct links for specific plans
-    if (planName === "Business") {
-      window.location.href = "https://buy.stripe.com/14k2bVglj6pf3m0bIL";
-      return;
-    }
-    if (planName === "Basic") {
-      window.location.href = "https://buy.stripe.com/dR68Aj7ON14V1dSfZ0";
-      return;
-    }
-    if (planName === "Professional") {
-      window.location.href = "https://buy.stripe.com/dR6aIrc5328Z09O5kl";
+    // Check for direct links for specific plans
+    const directUrl = getDirectPlanUrl(planName);
+    if (directUrl) {
+      window.location.href = directUrl;
       return;
     }
     
@@ -167,20 +142,9 @@ export const useSubscriptionManagement = () => {
           description: 'Activating your free plan...',
         });
         
-        const response = await supabase.functions.invoke('create-checkout', {
-          body: {
-            planId: planId,
-            userId: session.user.id
-          }
-        });
+        const response = await createSubscription(planId, session.user.id);
         
-        console.log('Free plan response:', response);
-        
-        if (response.error) {
-          throw new Error(response.error);
-        } else if (response.data?.error) {
-          throw new Error(response.data.error);
-        } else if (response.data?.success) {
+        if (response.success) {
           toast({
             title: 'Success!',
             description: 'Your free plan has been activated.',
@@ -193,21 +157,10 @@ export const useSubscriptionManagement = () => {
           description: 'Preparing checkout...',
         });
         
-        const response = await supabase.functions.invoke('create-checkout', {
-          body: {
-            planId: planId,
-            userId: session.user.id
-          }
-        });
+        const response = await createSubscription(planId, session.user.id);
         
-        console.log('Checkout response:', response);
-        
-        if (response.error) {
-          throw new Error(response.error);
-        } else if (response.data?.error) {
-          throw new Error(response.data.error);
-        } else if (response.data?.url) {
-          window.location.href = response.data.url;
+        if (response.url) {
+          window.location.href = response.url;
         } else {
           throw new Error('Invalid response from server');
         }
@@ -223,16 +176,6 @@ export const useSubscriptionManagement = () => {
       setCreating(false);
     }
   };
-  
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
 
   return {
     loading,
@@ -242,6 +185,6 @@ export const useSubscriptionManagement = () => {
     availablePlans,
     handleCancelSubscription,
     handleSubscribe,
-    formatDate
+    formatDate: formatSubscriptionDate
   };
 };
