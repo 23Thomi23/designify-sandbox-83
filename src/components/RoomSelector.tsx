@@ -1,12 +1,16 @@
-import { Home, BedDouble, Utensils } from 'lucide-react';
+
+import { Home, BedDouble, Utensils, Bath } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-export type Room = 'living room' | 'bedroom' | 'kitchen';
+
+export type Room = 'living room' | 'bedroom' | 'kitchen' | 'bathroom';
+
 interface RoomSelectorProps {
   selectedRoom: Room | null;
   onRoomSelect: (room: Room) => void;
   className?: string;
 }
+
 export const RoomSelector = ({
   selectedRoom,
   onRoomSelect,
@@ -24,6 +28,10 @@ export const RoomSelector = ({
       <Button variant={selectedRoom === 'kitchen' ? 'default' : 'outline'} onClick={() => onRoomSelect('kitchen')} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600">
         <Utensils className="w-4 h-4" />
         Kitchen
+      </Button>
+      <Button variant={selectedRoom === 'bathroom' ? 'default' : 'outline'} onClick={() => onRoomSelect('bathroom')} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600">
+        <Bath className="w-4 h-4" />
+        Bathroom
       </Button>
     </div>;
 };
