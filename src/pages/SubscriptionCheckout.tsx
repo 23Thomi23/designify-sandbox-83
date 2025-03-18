@@ -105,6 +105,10 @@ const SubscriptionCheckout = () => {
         // Redirect to Stripe checkout
         console.log('Redirecting to Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
+      } else if (response.data?.success && response.data?.redirect) {
+        // Handle free plan activation (immediate success)
+        console.log('Free plan activated, redirecting to:', response.data.redirect);
+        window.location.href = response.data.redirect;
       } else {
         console.error('Invalid response:', response.data);
         setError('Invalid response from server. Please try again later.');
@@ -157,6 +161,7 @@ const SubscriptionCheckout = () => {
             onCheckout={handleCheckout}
             loading={creatingCheckout}
             disabled={loading || !plan}
+            planPrice={plan?.price || 0}
           />
         </CardFooter>
       </Card>

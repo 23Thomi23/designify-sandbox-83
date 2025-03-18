@@ -8,31 +8,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-// Map plan names to Stripe price IDs (not product IDs)
-const PLAN_PRICE_MAP = {
-  // Standard naming - lowercase without spaces
-  'basic': 'price_1OwhUCGy89EHd6dDXqixE95G',
-  'professional': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
-  'business': 'price_1OwhXJGy89EHd6dDkgFytKkm',
-  'initial': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
+// Map plan names to Stripe price IDs
+const PLAN_PRICE_MAP: Record<string, string> = {
+  // Free plan - should be $0
+  'free': 'price_1P2nW5Gy89EHd6dDUEvQ62Kl',
   
-  // Variations with spaces
-  'basic plan': 'price_1OwhUCGy89EHd6dDXqixE95G',
-  'professional plan': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
-  'business plan': 'price_1OwhXJGy89EHd6dDkgFytKkm',
-  'initial plan': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
+  // Paid plans
+  'basic': 'price_1P2nWNGy89EHd6dDcQhKICDi',
+  'professional': 'price_1P2nWaGy89EHd6dDFVFSqI8p',
+  'business': 'price_1P2nWnGy89EHd6dDnm9DQYPj',
   
-  // Variations with capitalization
-  'Basic': 'price_1OwhUCGy89EHd6dDXqixE95G',
-  'Professional': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
-  'Business': 'price_1OwhXJGy89EHd6dDkgFytKkm',
-  'Initial': 'price_1OwhTbGy89EHd6dDgDI8FQpk',
-  
-  // Variations with spaces and capitalization
-  'Basic Plan': 'price_1OwhUCGy89EHd6dDXqixE95G',
-  'Professional Plan': 'price_1OwhVcGy89EHd6dDLLpGI7QH',
-  'Business Plan': 'price_1OwhXJGy89EHd6dDkgFytKkm',
-  'Initial Plan': 'price_1OwhTbGy89EHd6dDgDI8FQpk'
+  // Default fallback - use the basic plan if no match found
+  'default': 'price_1P2nWNGy89EHd6dDcQhKICDi'
 }
 
 serve(async (req) => {
@@ -109,6 +96,25 @@ serve(async (req) => {
     }
     
     console.log('Plan found:', JSON.stringify(plan))
+    
+    // Check if this is the free plan (price = 0)
+    if (plan.price === 0) {
+      console.log('Free plan selected, no payment needed')
+      // Here you would handle free plan signup logic
+      // For example, you could create a subscription record with status 'active'
+      // and set up the user's benefits without going through Stripe
+      
+      // For now, we'll just return a success message
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Free plan activated', 
+        redirect: `${SITE_URL}/subscription/success?free=true` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200
+      })
+    }
+    
     console.log('Fetching user details for userId:', userId)
 
     const { data: user, error: userError } = await supabase
@@ -183,30 +189,13 @@ serve(async (req) => {
       console.log('Found existing Stripe customer:', customerId)
     }
 
-    // Find the price ID for the plan
-    console.log('Matching plan name:', plan.name)
+    // Get the plan name in lowercase for mapping
+    const planNameLower = plan.name.toLowerCase().replace(/\s+/g, '');
+    console.log('Looking up price ID for plan name (normalized):', planNameLower);
     
-    // Try direct matching with plan name
-    let priceId = PLAN_PRICE_MAP[plan.name]
-    
-    // If not found, try lowercase version
-    if (!priceId) {
-      priceId = PLAN_PRICE_MAP[plan.name.toLowerCase()]
-    }
-    
-    // If still not found, try removing spaces and lowercase
-    if (!priceId) {
-      const planKey = plan.name.toLowerCase().replace(/\s+/g, '')
-      priceId = PLAN_PRICE_MAP[planKey]
-    }
-    
-    console.log('Using price ID:', priceId)
-    
-    // If still no match, use basic as default
-    if (!priceId) {
-      console.log('No mapping found for plan name:', plan.name, 'using default basic plan')
-      priceId = PLAN_PRICE_MAP.basic
-    }
+    // Find the price ID for the plan - use the normalized plan name or fallback to default
+    let priceId = PLAN_PRICE_MAP[planNameLower] || PLAN_PRICE_MAP['default'];
+    console.log('Using price ID:', priceId);
     
     // Create Stripe session
     console.log('Creating Stripe checkout session with:')

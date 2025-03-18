@@ -7,10 +7,16 @@ interface CheckoutActionsProps {
   onCheckout: () => Promise<void>;
   loading: boolean;
   disabled: boolean;
+  planPrice: number;
 }
 
-const CheckoutActions = ({ onCheckout, loading, disabled }: CheckoutActionsProps) => {
+const CheckoutActions = ({ onCheckout, loading, disabled, planPrice }: CheckoutActionsProps) => {
   const navigate = useNavigate();
+  
+  // Determine the appropriate button text based on whether it's a free plan
+  const buttonText = planPrice === 0 
+    ? (loading ? 'Activating...' : 'Activate Free Plan') 
+    : (loading ? 'Processing...' : 'Proceed to Payment');
   
   return (
     <>
@@ -20,7 +26,7 @@ const CheckoutActions = ({ onCheckout, loading, disabled }: CheckoutActionsProps
         disabled={loading || disabled}
       >
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {loading ? 'Processing...' : 'Proceed to Payment'}
+        {buttonText}
       </Button>
       <Button 
         variant="outline" 
