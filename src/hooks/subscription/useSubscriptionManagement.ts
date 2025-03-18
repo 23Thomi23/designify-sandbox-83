@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -129,7 +128,7 @@ export const useSubscriptionManagement = () => {
       return;
     }
     if (planName === "Basic") {
-      window.location.href = "https://buy.stripe.com/dR68Aj7ON14V1dSfZ0";
+      window.location.href = "https://buy.stripe.com/14k2bVglj6pf3m0bIL";
       return;
     }
     if (planName === "Professional") {
