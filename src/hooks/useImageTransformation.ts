@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Room } from '@/components/RoomSelector';
@@ -29,6 +29,172 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
   const [error, setError] = useState<string | null>(null);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [usageStats, setUsageStats] = useState<{
+    usedImages: number;
+    availableImages: number;
+    remainingImages: number;
+  } | null>(null);
+
+  // Fetch user's subscription and usage data on component mount
+  useEffect(() => {
+    if (userId) {
+      fetchUsageData();
+    }
+  }, [userId]);
+
+  const fetchUsageData = async () => {
+    try {
+      // Fetch user's image consumption data
+      const { data: consumptionData, error: consumptionError } = await supabase
+        .from('image_consumption')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+        
+      if (consumptionError && consumptionError.code !== 'PGRST116') {
+        console.error('Error fetching usage data:', consumptionError);
+        return;
+      }
+      
+      // Get user profile to check if they're a legacy user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_legacy_user')
+        .eq('id', userId)
+        .single();
+        
+      // Legacy users are not subject to limits
+      if (profileData?.is_legacy_user) {
+        return;
+      }
+      
+      if (consumptionData) {
+        const usedImages = consumptionData.used_images;
+        const availableImages = consumptionData.available_images;
+        const remainingImages = Math.max(0, availableImages - usedImages);
+        
+        setUsageStats({
+          usedImages,
+          availableImages,
+          remainingImages
+        });
+        
+        // If user has very few images left, show a warning
+        if (remainingImages <= 2 && remainingImages > 0) {
+          toast.warning(`You have only ${remainingImages} image${remainingImages === 1 ? '' : 's'} left in your plan.`);
+        }
+      } else {
+        // Create a default consumption record for new users (free tier - 5 images)
+        const { data: subscriptionData } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', 'Free')
+          .single();
+          
+        const defaultLimit = subscriptionData?.included_images || 5;
+        
+        const { data: newConsumption, error: insertError } = await supabase
+          .from('image_consumption')
+          .insert({
+            user_id: userId,
+            available_images: defaultLimit,
+            used_images: 0
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          console.error('Error creating usage record:', insertError);
+          return;
+        }
+        
+        if (newConsumption) {
+          setUsageStats({
+            usedImages: 0,
+            availableImages: defaultLimit,
+            remainingImages: defaultLimit
+          });
+          
+          toast.info(`Welcome! You have ${defaultLimit} free images to transform.`);
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchUsageData:', error);
+    }
+  };
+
+  const checkImageLimit = async () => {
+    try {
+      // Get user profile to check if they're a legacy user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_legacy_user')
+        .eq('id', userId)
+        .single();
+        
+      // Legacy users are not subject to limits
+      if (profileData?.is_legacy_user) {
+        return true;
+      }
+      
+      // Fetch user's image consumption data
+      const { data: consumption, error: consumptionError } = await supabase
+        .from('image_consumption')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+        
+      if (consumptionError) {
+        console.error('Error fetching usage limit:', consumptionError);
+        return false;
+      }
+      
+      // If user has used all their images, show the limit dialog
+      if (consumption && consumption.used_images >= consumption.available_images) {
+        const { data: plans } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .order('price', { ascending: true });
+          
+        setSubscriptionData(plans);
+        setUsageStats({
+          usedImages: consumption.used_images,
+          availableImages: consumption.available_images,
+          remainingImages: 0
+        });
+        setShowLimitDialog(true);
+        return false;
+      }
+      
+      // Update the usage stats
+      if (consumption) {
+        setUsageStats({
+          usedImages: consumption.used_images,
+          availableImages: consumption.available_images,
+          remainingImages: Math.max(0, consumption.available_images - consumption.used_images)
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking image limit:', error);
+      return false;
+    }
+  };
+
+  const showUsageDialog = async () => {
+    if (!usageStats) await fetchUsageData();
+    
+    const { data: plans } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .order('price', { ascending: true });
+      
+    if (plans) {
+      setSubscriptionData(plans);
+      setShowLimitDialog(true);
+    }
+  };
 
   const handleImageSelect = (file: File) => {
     setSelectedImage(file);
@@ -56,6 +222,13 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
 
     if (!selectedRoom) {
       toast.error('Please select a room type');
+      return;
+    }
+
+    // Check if user has reached their image limit
+    const hasAvailableImages = await checkImageLimit();
+    if (!hasAvailableImages) {
+      toast.error('You have reached your image transformation limit');
       return;
     }
 
@@ -97,7 +270,7 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
       if (response.data && response.data.limitExceeded) {
         setError('You have reached your subscription limit');
         const { data: plans } = await supabase
-          .from('subscription_plans' as any)
+          .from('subscription_plans')
           .select('*')
           .order('price', { ascending: true });
           
@@ -137,6 +310,9 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
       
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
+      
+      // Refresh usage data after successful transformation
+      fetchUsageData();
     } catch (error: any) {
       console.error('Transformation error:', error);
       setError(`Error: ${error?.message || 'An unexpected error occurred'}. Please try again.`);
@@ -160,10 +336,12 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
     error,
     showLimitDialog,
     subscriptionData,
+    usageStats,
     handleImageSelect,
     handleStyleSelect,
     handleRoomSelect,
     handleTransformation,
-    setShowLimitDialog
+    setShowLimitDialog,
+    showUsageDialog
   };
 };

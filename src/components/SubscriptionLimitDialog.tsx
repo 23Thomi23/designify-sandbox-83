@@ -3,6 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge";
 
 interface SubscriptionPlan {
   id: string;
@@ -16,9 +17,19 @@ interface SubscriptionLimitDialogProps {
   open: boolean;
   onClose: () => void;
   plans: SubscriptionPlan[];
+  remainingImages?: number;
+  usedImages?: number;
+  totalImages?: number;
 }
 
-export function SubscriptionLimitDialog({ open, onClose, plans }: SubscriptionLimitDialogProps) {
+export function SubscriptionLimitDialog({ 
+  open, 
+  onClose, 
+  plans,
+  remainingImages = 0,
+  usedImages = 0,
+  totalImages = 0
+}: SubscriptionLimitDialogProps) {
   const navigate = useNavigate();
 
   const handleUpgrade = (planId: string) => {
@@ -26,16 +37,30 @@ export function SubscriptionLimitDialog({ open, onClose, plans }: SubscriptionLi
     onClose();
   };
 
+  const isLimitReached = remainingImages <= 0;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Image Limit Reached</DialogTitle>
+          <DialogTitle>{isLimitReached ? "Image Limit Reached" : "Subscription Usage"}</DialogTitle>
           <DialogDescription>
-            You've reached the limit of images for your current plan. Upgrade to continue transforming more properties.
+            {isLimitReached 
+              ? "You've reached the limit of images for your current plan. Upgrade to continue transforming more properties."
+              : `You have used ${usedImages} of your ${totalImages} allowed images.`
+            }
           </DialogDescription>
         </DialogHeader>
         
+        {isLimitReached && (
+          <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md mb-4">
+            <div className="flex items-center">
+              <Badge variant="outline" className="mr-2 bg-amber-100 text-amber-800 hover:bg-amber-100">Limited</Badge>
+              <span className="text-sm text-amber-800">Upgrade now to continue using the service</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-4 py-4">
           {plans.map((plan) => (
             <div 
