@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -124,7 +125,7 @@ export const useSubscriptionManagement = () => {
   const handleSubscribe = async (planId: string, planName: string) => {
     // Direct links for specific plans
     if (planName === "Business") {
-      window.location.href = "https://buy.stripe.com/5kA2bV0mldRHaOseUU";
+      window.location.href = "https://buy.stripe.com/14k2bVglj6pf3m0bIL";
       return;
     }
     if (planName === "Basic") {
