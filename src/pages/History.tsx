@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
+import { BackButton } from '@/components/BackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ const History = () => {
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-8 space-y-8">
         <Header />
+        <BackButton />
         
         <div>
           <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">

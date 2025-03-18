@@ -14,6 +14,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { CreditCard, History, Image, ChevronRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthCheck } from '@/components/AuthCheck';
+import { BackButton } from '@/components/BackButton';
 
 const AccountPage = () => {
   const navigate = useNavigate();
@@ -104,6 +105,7 @@ const AccountPage = () => {
   return (
     <AuthCheck>
       <div className="container py-8">
+        <BackButton />
         <h1 className="text-3xl font-bold mb-8">Account</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
