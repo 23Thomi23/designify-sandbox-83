@@ -6,6 +6,7 @@ import { AccountMenu } from '@/components/AccountMenu';
 import { History, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { RemainingImagesIndicator } from '@/components/account/RemainingImagesIndicator';
 
 export function Header() {
   const [subscription, setSubscription] = useState<any>(null);
@@ -53,6 +54,8 @@ export function Header() {
         </Link>
       </div>
       <div className="flex items-center gap-2">
+        <RemainingImagesIndicator />
+        
         <Link to="/history">
           <Button variant="ghost" className="flex items-center gap-2">
             <History size={16} />
