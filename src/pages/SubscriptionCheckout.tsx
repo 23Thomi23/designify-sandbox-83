@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ErrorDisplay } from '@/components/transformation/ErrorDisplay';
+import LoadingState from '@/components/subscription/LoadingState';
+import PlanDisplay from '@/components/subscription/PlanDisplay';
+import CheckoutActions from '@/components/subscription/CheckoutActions';
 
 const SubscriptionCheckout = () => {
   const [searchParams] = useSearchParams();
@@ -138,32 +140,10 @@ const SubscriptionCheckout = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            <div className="text-center py-4">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-              <p className="mt-2">Loading plan details...</p>
-            </div>
+            <LoadingState message="Loading plan details..." />
           ) : plan ? (
             <div className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <h3 className="font-semibold text-lg mb-1">{plan.name}</h3>
-                <div className="text-2xl font-bold mb-2">${plan.price}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-                <p className="text-sm text-muted-foreground mb-3">{plan.description}</p>
-                <ul className="space-y-2">
-                  <li className="flex items-center text-sm">
-                    <span className="mr-2">✓</span>
-                    <span>{plan.included_images} images per month</span>
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <span className="mr-2">✓</span>
-                    <span>High-quality AI transformations</span>
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <span className="mr-2">✓</span>
-                    <span>Cancel anytime</span>
-                  </li>
-                </ul>
-              </div>
-              
+              <PlanDisplay plan={plan} />
               <ErrorDisplay error={error} details={detailedError} />
             </div>
           ) : (
@@ -173,21 +153,11 @@ const SubscriptionCheckout = () => {
           )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <Button 
-            className="w-full" 
-            onClick={handleCheckout}
-            disabled={loading || creatingCheckout || !plan}
-          >
-            {creatingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {creatingCheckout ? 'Processing...' : 'Proceed to Payment'}
-          </Button>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={() => navigate('/subscription')}
-          >
-            Cancel
-          </Button>
+          <CheckoutActions 
+            onCheckout={handleCheckout}
+            loading={creatingCheckout}
+            disabled={loading || !plan}
+          />
         </CardFooter>
       </Card>
     </div>
