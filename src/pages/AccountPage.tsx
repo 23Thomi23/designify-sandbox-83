@@ -39,8 +39,8 @@ const AccountPage = () => {
         setUser(session.user as UserProfile);
         
         // Fetch user subscription
-        const { data: subscriptionData } = await supabase
-          .from('user_subscriptions' as any)
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('user_subscriptions')
           .select(`
             *,
             subscription_plans:subscription_id (
@@ -53,34 +53,44 @@ const AccountPage = () => {
           .eq('status', 'active')
           .single();
           
-        setSubscription(subscriptionData);
+        if (!subscriptionError && subscriptionData) {
+          setSubscription(subscriptionData as UserSubscription);
+        }
         
         // Fetch usage data
-        const { data: consumption } = await supabase
-          .from('image_consumption' as any)
+        const { data: consumption, error: consumptionError } = await supabase
+          .from('image_consumption')
           .select('*')
           .eq('user_id', session.user.id)
           .single();
           
-        setUsageData(consumption);
+        if (!consumptionError && consumption) {
+          setUsageData(consumption as ImageUsage);
+        }
         
         // Fetch processing history
-        const { data: history } = await supabase
-          .from('processing_history' as any)
+        const { data: history, error: historyError } = await supabase
+          .from('processing_history')
           .select('*')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(5);
           
-        setProcessingHistory(history || []);
+        if (!historyError && history) {
+          setProcessingHistory(history as ProcessingHistoryItem[]);
+        } else {
+          setProcessingHistory([]);
+        }
         
         // Fetch available plans
-        const { data: plansData } = await supabase
-          .from('subscription_plans' as any)
+        const { data: plansData, error: plansError } = await supabase
+          .from('subscription_plans')
           .select('*')
           .order('price', { ascending: true });
           
-        setPlans(plansData || []);
+        if (!plansError && plansData) {
+          setPlans(plansData as SubscriptionPlan[]);
+        }
       } catch (error) {
         console.error('Error fetching account data:', error);
       } finally {
@@ -126,7 +136,7 @@ const AccountPage = () => {
           <div>
             <AvailablePlansCard 
               plans={plans} 
-              currentPlanId={subscription?.subscription_plans?.id} 
+              currentPlanId={subscription?.subscription_id} 
             />
           </div>
         </div>
