@@ -12,6 +12,7 @@ const SubscriptionPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
@@ -129,8 +130,100 @@ const SubscriptionPage = () => {
     }
   };
   
-  const handleUpgrade = (planId: string) => {
-    navigate(`/subscription/checkout?plan=${planId}`);
+  const handleSubscribe = async (planId: string) => {
+    setCreating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Required',
+          description: 'Please sign in to continue with checkout.',
+        });
+        navigate('/auth');
+        return;
+      }
+      
+      // Find the plan
+      const plan = availablePlans.find(p => p.id === planId);
+      if (!plan) {
+        toast({
+          variant: 'destructive',
+          title: 'Plan Error',
+          description: 'Selected plan not found.',
+        });
+        return;
+      }
+      
+      // Handle free plan activation directly
+      if (plan.price === 0) {
+        toast({
+          title: 'Processing',
+          description: 'Activating your free plan...',
+        });
+        
+        // Create checkout session
+        const response = await supabase.functions.invoke('create-checkout', {
+          body: {
+            planId: planId,
+            userId: session.user.id
+          }
+        });
+        
+        console.log('Free plan response:', response);
+        
+        if (response.error) {
+          throw new Error(response.error);
+        } else if (response.data?.error) {
+          throw new Error(response.data.error);
+        } else if (response.data?.success) {
+          // Handle free plan activation success
+          toast({
+            title: 'Success!',
+            description: 'Your free plan has been activated.',
+          });
+          // Refresh the page to update subscription status
+          window.location.reload();
+        }
+      } else {
+        // For paid plans, create a checkout session and redirect to Stripe
+        toast({
+          title: 'Redirecting',
+          description: 'Preparing checkout...',
+        });
+        
+        // Create checkout session
+        const response = await supabase.functions.invoke('create-checkout', {
+          body: {
+            planId: planId,
+            userId: session.user.id
+          }
+        });
+        
+        console.log('Checkout response:', response);
+        
+        if (response.error) {
+          throw new Error(response.error);
+        } else if (response.data?.error) {
+          throw new Error(response.data.error);
+        } else if (response.data?.url) {
+          // Redirect to Stripe checkout
+          window.location.href = response.data.url;
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Checkout Failed',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    } finally {
+      setCreating(false);
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -275,10 +368,12 @@ const SubscriptionPage = () => {
                   ) : (
                     <Button 
                       className="w-full" 
-                      onClick={() => handleUpgrade(plan.id)}
+                      onClick={() => handleSubscribe(plan.id)}
                       variant={subscription ? "default" : "default"}
+                      disabled={creating}
                     >
-                      {subscription ? 'Switch Plan' : 'Choose Plan'}
+                      {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {subscription ? 'Switch Plan' : plan.price === 0 ? 'Activate Free Plan' : 'Subscribe'}
                     </Button>
                   )}
                 </CardFooter>

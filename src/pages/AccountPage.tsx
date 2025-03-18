@@ -90,7 +90,7 @@ const AccountPage = () => {
   }, [navigate]);
   
   const handleUpgradeClick = (planId: string) => {
-    navigate(`/subscription/checkout?plan=${planId}`);
+    navigate('/subscription');
   };
   
   if (loading) {

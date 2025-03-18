@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AccountPage from "./pages/AccountPage";
-import SubscriptionCheckout from "./pages/SubscriptionCheckout";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionPage from "./pages/SubscriptionPage";
@@ -56,14 +55,6 @@ const App = () => (
             element={
               <AuthCheck>
                 <SubscriptionPage />
-              </AuthCheck>
-            } 
-          />
-          <Route 
-            path="/subscription/checkout" 
-            element={
-              <AuthCheck>
-                <SubscriptionCheckout />
               </AuthCheck>
             } 
           />
