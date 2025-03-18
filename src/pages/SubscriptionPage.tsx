@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CreditCard, AlertTriangle } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 const SubscriptionPage = () => {
   const navigate = useNavigate();
@@ -230,6 +232,7 @@ const SubscriptionPage = () => {
   
   return (
     <div className="container max-w-4xl py-10">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">Subscription Management</h1>
       
       {loading ? (
