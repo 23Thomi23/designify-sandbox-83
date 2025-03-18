@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,6 @@ const SubscriptionPage = () => {
           return;
         }
         
-        // Fetch user's active subscription
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -55,7 +53,6 @@ const SubscriptionPage = () => {
           setSubscription(subscriptionData);
         }
         
-        // Fetch available plans
         const { data: plansData, error: plansError } = await supabase
           .from('subscription_plans')
           .select('*')
@@ -92,7 +89,6 @@ const SubscriptionPage = () => {
         return;
       }
       
-      // Call the cancel-subscription edge function
       const { data, error } = await supabase.functions.invoke('cancel-subscription', {
         body: {
           subscriptionId: subscription.stripe_subscription_id
@@ -112,7 +108,6 @@ const SubscriptionPage = () => {
           description: 'Your subscription has been cancelled and will end at the current billing period.',
         });
         
-        // Update subscription in state
         setSubscription({
           ...subscription,
           cancel_at_period_end: true
@@ -130,7 +125,12 @@ const SubscriptionPage = () => {
     }
   };
   
-  const handleSubscribe = async (planId: string) => {
+  const handleSubscribe = async (planId: string, planName: string) => {
+    if (planName === "Business") {
+      window.location.href = "https://buy.stripe.com/5kA2bV0mldRHaOseUU";
+      return;
+    }
+    
     setCreating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -145,7 +145,6 @@ const SubscriptionPage = () => {
         return;
       }
       
-      // Find the plan
       const plan = availablePlans.find(p => p.id === planId);
       if (!plan) {
         toast({
@@ -156,14 +155,12 @@ const SubscriptionPage = () => {
         return;
       }
       
-      // Handle free plan activation directly
       if (plan.price === 0) {
         toast({
           title: 'Processing',
           description: 'Activating your free plan...',
         });
         
-        // Create checkout session
         const response = await supabase.functions.invoke('create-checkout', {
           body: {
             planId: planId,
@@ -178,22 +175,18 @@ const SubscriptionPage = () => {
         } else if (response.data?.error) {
           throw new Error(response.data.error);
         } else if (response.data?.success) {
-          // Handle free plan activation success
           toast({
             title: 'Success!',
             description: 'Your free plan has been activated.',
           });
-          // Refresh the page to update subscription status
           window.location.reload();
         }
       } else {
-        // For paid plans, create a checkout session and redirect to Stripe
         toast({
           title: 'Redirecting',
           description: 'Preparing checkout...',
         });
         
-        // Create checkout session
         const response = await supabase.functions.invoke('create-checkout', {
           body: {
             planId: planId,
@@ -208,7 +201,6 @@ const SubscriptionPage = () => {
         } else if (response.data?.error) {
           throw new Error(response.data.error);
         } else if (response.data?.url) {
-          // Redirect to Stripe checkout
           window.location.href = response.data.url;
         } else {
           throw new Error('Invalid response from server');
@@ -368,7 +360,7 @@ const SubscriptionPage = () => {
                   ) : (
                     <Button 
                       className="w-full" 
-                      onClick={() => handleSubscribe(plan.id)}
+                      onClick={() => handleSubscribe(plan.id, plan.name)}
                       variant={subscription ? "default" : "default"}
                       disabled={creating}
                     >
