@@ -62,9 +62,16 @@ const SubscriptionCheckout = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Required',
+          description: 'Please sign in to continue with checkout.',
+        });
         navigate('/auth');
         return;
       }
+      
+      console.log('Creating checkout with planId:', plan.id, 'and userId:', session.user.id);
       
       // Create checkout session
       const response = await supabase.functions.invoke('create-checkout', {
@@ -73,6 +80,8 @@ const SubscriptionCheckout = () => {
           userId: session.user.id
         }
       });
+      
+      console.log('Checkout response:', response);
       
       if (response.error) {
         console.error('Error creating checkout:', response.error);
@@ -83,10 +92,21 @@ const SubscriptionCheckout = () => {
           title: 'Checkout Failed',
           description: 'Could not create checkout session. Please try again.',
         });
+      } else if (response.data?.error) {
+        console.error('Server error:', response.data.error);
+        setError(`Server error: ${response.data.error}`);
+        setDetailedError(response.data.details ? JSON.stringify(response.data.details) : null);
+        toast({
+          variant: 'destructive',
+          title: 'Checkout Failed',
+          description: response.data.error,
+        });
       } else if (response.data?.url) {
         // Redirect to Stripe checkout
+        console.log('Redirecting to Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
+        console.error('Invalid response:', response.data);
         setError('Invalid response from server. Please try again later.');
         setDetailedError(JSON.stringify(response.data));
         toast({
@@ -155,7 +175,7 @@ const SubscriptionCheckout = () => {
                     {detailedError && (
                       <details className="mt-2 text-xs">
                         <summary>Technical Details</summary>
-                        <pre className="mt-2 whitespace-pre-wrap">{detailedError}</pre>
+                        <pre className="mt-2 whitespace-pre-wrap break-all">{detailedError}</pre>
                       </details>
                     )}
                   </AlertDescription>
