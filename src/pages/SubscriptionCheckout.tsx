@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { ErrorDisplay } from '@/components/transformation/ErrorDisplay';
 
 const SubscriptionCheckout = () => {
   const [searchParams] = useSearchParams();
@@ -166,21 +164,7 @@ const SubscriptionCheckout = () => {
                 </ul>
               </div>
               
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {error}
-                    {detailedError && (
-                      <details className="mt-2 text-xs">
-                        <summary>Technical Details</summary>
-                        <pre className="mt-2 whitespace-pre-wrap break-all">{detailedError}</pre>
-                      </details>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
+              <ErrorDisplay error={error} details={detailedError} />
             </div>
           ) : (
             <div className="text-center py-4 text-red-600">
