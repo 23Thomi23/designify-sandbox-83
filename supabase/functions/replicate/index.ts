@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./utils/cors.ts";
-import { checkSubscriptionLimits } from "./utils/subscription.ts";
+import { checkSubscriptionLimits, ensureSubscriptionPlans } from "./utils/subscription.ts";
 import { generateTransformation } from "./services/imageTransformation.ts";
 import { enhanceWithUpscaler } from "./services/imageEnhancement.ts";
 import { updateUserUsage, logProcessing } from "./utils/userTracking.ts";
@@ -13,6 +13,9 @@ serve(async (req) => {
   }
 
   try {
+    // Ensure subscription plans exist
+    await ensureSubscriptionPlans();
+
     const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
 
     if (!REPLICATE_API_KEY) {

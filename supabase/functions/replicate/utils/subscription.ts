@@ -36,3 +36,65 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
 
   return false; // User has available images
 }
+
+/**
+ * Check and initialize subscription plans if they don't exist
+ */
+export async function ensureSubscriptionPlans(): Promise<void> {
+  const supabase = supabaseClient();
+  
+  // Check if plans already exist
+  const { data: existingPlans, error } = await supabase
+    .from("subscription_plans")
+    .select("name")
+    .limit(1);
+    
+  if (error) {
+    console.error("Error checking for subscription plans:", error);
+    return;
+  }
+  
+  // If plans already exist, no need to create them
+  if (existingPlans && existingPlans.length > 0) {
+    return;
+  }
+  
+  // Define the default plans
+  const defaultPlans = [
+    {
+      name: "Free",
+      price: 0,
+      included_images: 5,
+      description: "Free tier with limited images"
+    },
+    {
+      name: "Basic",
+      price: 9.99,
+      included_images: 20,
+      description: "Basic plan for regular users"
+    },
+    {
+      name: "Professional",
+      price: 19.99,
+      included_images: 50,
+      description: "Professional plan for power users"
+    },
+    {
+      name: "Pay Per Image",
+      price: 19.99,
+      included_images: 25,
+      description: "Pay as you go for occasional use"
+    }
+  ];
+  
+  // Insert the default plans
+  const { error: insertError } = await supabase
+    .from("subscription_plans")
+    .insert(defaultPlans);
+    
+  if (insertError) {
+    console.error("Error creating subscription plans:", insertError);
+  } else {
+    console.log("Default subscription plans created successfully");
+  }
+}

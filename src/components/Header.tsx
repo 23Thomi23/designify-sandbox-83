@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,9 +7,12 @@ import { History, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { RemainingImagesIndicator } from '@/components/account/RemainingImagesIndicator';
+import { ChangeTierButton } from '@/components/subscription/ChangeTierButton';
+
 export function Header() {
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
@@ -40,6 +44,7 @@ export function Header() {
     };
     fetchSubscription();
   }, []);
+
   return <header className="flex justify-between items-center py-4">
       <div className="flex items-center gap-2">
         <Link to="/" className="flex items-center gap-2">
@@ -49,6 +54,7 @@ export function Header() {
       </div>
       <div className="flex items-center gap-2">
         <RemainingImagesIndicator />
+        <ChangeTierButton />
         
         <Link to="/history">
           <Button variant="ghost" className="flex items-center gap-2">

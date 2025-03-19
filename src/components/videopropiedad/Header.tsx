@@ -1,8 +1,24 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { ChangeTierButton } from '@/components/subscription/ChangeTierButton';
+
 export const Header = () => {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+    
+    checkAuth();
+  }, []);
+  
   return <motion.header initial={{
     opacity: 0,
     y: -20
@@ -25,7 +41,16 @@ export const Header = () => {
         <a href="#contact" className="text-sm font-medium hover:text-gray-600 transition-colors">Contacto</a>
       </nav>
       
-      <Button onClick={() => navigate('/auth')} variant="default" className="hidden md:flex bg-black text-white hover:bg-gray-800">Iniciar Sesión</Button>
+      <div className="hidden md:flex gap-2">
+        {isLoggedIn && <ChangeTierButton />}
+        <Button 
+          onClick={() => navigate(isLoggedIn ? '/' : '/auth')} 
+          variant="default" 
+          className="bg-black text-white hover:bg-gray-800"
+        >
+          {isLoggedIn ? 'Dashboard' : 'Iniciar Sesión'}
+        </Button>
+      </div>
       
       {/* Mobile Menu Button */}
       <div className="md:hidden">
