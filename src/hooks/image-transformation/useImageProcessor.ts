@@ -24,6 +24,8 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
     setTransformedImage(null);
     
     try {
+      console.log('Starting image transformation process for user:', userId);
+      
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -53,7 +55,9 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       console.log("Replicate function response:", response);
 
       if (response.data && response.data.limitExceeded) {
+        console.log('User has reached their subscription limit');
         setError('You have reached your subscription limit');
+        toast.error('You have reached your image transformation limit. Please upgrade your plan to continue.');
         return false;
       }
 
@@ -87,7 +91,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
       
-      // Trigger the callback on success
+      // Trigger the callback on success to update usage stats
       onSuccess();
       return true;
     } catch (error: any) {
