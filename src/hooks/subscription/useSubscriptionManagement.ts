@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -28,19 +27,25 @@ export const useSubscriptionManagement = () => {
 
   const fetchSubscriptionData = async () => {
     try {
+      console.log('Getting user session');
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('No session found, redirecting to auth');
         navigate('/auth');
         return;
       }
       
+      console.log('User is authenticated with ID:', session.user.id);
+      
       try {
         const subscriptionData = await fetchUserSubscription(session.user.id);
+        console.log('Subscription data result:', subscriptionData ? 'Found' : 'Not found');
         if (subscriptionData) {
           setSubscription(subscriptionData);
         }
       } catch (error) {
+        console.error('Error in fetchUserSubscription:', error);
         toast({
           title: 'Error',
           description: 'Failed to load subscription data',
@@ -50,13 +55,19 @@ export const useSubscriptionManagement = () => {
       
       try {
         const plansData = await fetchAvailablePlans();
+        console.log('Plans data found:', plansData.length);
         setAvailablePlans(plansData);
       } catch (error) {
-        console.error('Error fetching plans:', error);
+        console.error('Error in fetchAvailablePlans:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load subscription plans',
+          variant: 'destructive',
+        });
       }
       
     } catch (error) {
-      console.error('Error:', error);
+      console.error('General error in fetchSubscriptionData:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
