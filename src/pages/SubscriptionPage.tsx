@@ -1,6 +1,4 @@
-
 import { BackButton } from '@/components/BackButton';
-import { Loader2 } from 'lucide-react';
 import { useSubscriptionManagement } from '@/hooks/subscription/useSubscriptionManagement';
 
 // Component imports
