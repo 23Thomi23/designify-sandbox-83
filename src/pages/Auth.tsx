@@ -1,30 +1,16 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-
 const Auth = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-
-  // Check if user is already logged in on component mount
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/dashboard');
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -63,7 +49,6 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
-
   return <div className="min-h-screen bg-background flex items-center justify-center bg-black">
       <div className="w-full max-w-md space-y-8 p-8">
         <div className="text-center">
@@ -95,5 +80,4 @@ const Auth = () => {
       </div>
     </div>;
 };
-
 export default Auth;

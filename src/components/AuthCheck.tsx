@@ -17,10 +17,7 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        // Redirect to dashboard when authenticated
-        navigate('/dashboard');
-      } else {
+      if (!session) {
         navigate('/auth');
       }
     });
