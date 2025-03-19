@@ -1,134 +1,137 @@
-
-import { supabaseClient } from "../../_shared/supabase-client.ts";
+import { supabaseClient } from '../../_shared/supabase-client.ts';
 
 /**
  * Checks if a user has reached their subscription limit
- * @param userId The user ID to check limits for
- * @returns boolean True if limit exceeded, false otherwise
+ * @returns true if the limit is exceeded, false otherwise
  */
 export async function checkSubscriptionLimits(userId: string): Promise<boolean> {
+  console.log(`Checking subscription limits for user: ${userId}`);
   const supabase = supabaseClient();
-
-  // Check if user is legacy (not subject to limits)
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("is_legacy_user")
-    .eq("id", userId)
-    .single();
-
-  if (profileData?.is_legacy_user) {
-    console.log(`User ${userId} is a legacy user, no limits applied`);
-    return false; // Legacy users are not limited
-  }
-
-  // Check user's image consumption limits
-  const { data: usageData, error } = await supabase
-    .from("image_consumption")
-    .select("available_images, used_images")
-    .eq("user_id", userId)
-    .single();
-
-  if (error) {
-    console.error("Error fetching usage data:", error);
-    return true; // If we can't verify, assume limit reached for safety
-  }
-
-  if (!usageData) {
-    console.log("No usage data found for user:", userId);
-    
-    // Create a default consumption record for new users (free tier - 5 images)
-    const { data: freePlan } = await supabase
-      .from("subscription_plans")
-      .select("included_images")
-      .eq("name", "Free")
+  
+  try {
+    // First check if the user is a legacy user (not subject to limits)
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('is_legacy_user')
+      .eq('id', userId)
       .single();
       
-    const defaultLimit = freePlan?.included_images || 5;
+    // Legacy users are not subject to limits
+    if (profileData?.is_legacy_user) {
+      console.log(`User ${userId} is a legacy user, no limits apply`);
+      return false;
+    }
     
-    await supabase
-      .from("image_consumption")
-      .insert({
-        user_id: userId,
-        available_images: defaultLimit,
-        used_images: 0
-      });
+    // Check the user's image consumption
+    const { data: consumptionData, error: consumptionError } = await supabase
+      .from('image_consumption')
+      .select('available_images, used_images')
+      .eq('user_id', userId)
+      .single();
       
-    console.log(`Created initial usage record for user ${userId} with ${defaultLimit} images`);
-    return false; // New users have their initial allocation
+    if (consumptionError) {
+      // If the user doesn't have a consumption record yet, create one for the free tier
+      if (consumptionError.code === 'PGRST116') {
+        // Get the free tier limit
+        const { data: freeTier } = await supabase
+          .from('subscription_plans')
+          .select('included_images')
+          .eq('name', 'Free')
+          .single();
+          
+        const freeLimit = freeTier?.included_images || 5;
+        
+        // Create a consumption record for the free tier
+        const { error: insertError } = await supabase
+          .from('image_consumption')
+          .insert({
+            user_id: userId,
+            available_images: freeLimit,
+            used_images: 0
+          });
+          
+        if (insertError) {
+          console.error(`Error creating consumption record for user ${userId}:`, insertError);
+          // Default to blocking if we can't verify
+          return true;
+        }
+        
+        // New user, hasn't used any images yet
+        return false;
+      }
+      
+      console.error(`Error fetching consumption data for user ${userId}:`, consumptionError);
+      // Default to blocking if we can't verify
+      return true;
+    }
+    
+    // Check if the user has reached their limit
+    if (consumptionData.used_images >= consumptionData.available_images) {
+      console.log(`User ${userId} has reached their limit: ${consumptionData.used_images}/${consumptionData.available_images}`);
+      return true;
+    }
+    
+    console.log(`User ${userId} has ${consumptionData.available_images - consumptionData.used_images} images remaining`);
+    return false;
+  } catch (error) {
+    console.error(`Error checking subscription limits for user ${userId}:`, error);
+    // Default to blocking if we can't verify
+    return true;
   }
-
-  // Strict limit check - ensure user hasn't met or exceeded their limit
-  if (usageData.used_images >= usageData.available_images) {
-    console.log(
-      `User ${userId} has reached their limit: ${usageData.used_images}/${usageData.available_images}`,
-    );
-    return true; // Limit exceeded
-  }
-
-  console.log(
-    `User ${userId} has ${usageData.available_images - usageData.used_images} images remaining`,
-  );
-  return false; // User has available images
 }
 
 /**
- * Check and initialize subscription plans if they don't exist
+ * Ensures that the subscription plans exist in the database
  */
 export async function ensureSubscriptionPlans(): Promise<void> {
   const supabase = supabaseClient();
   
-  // Check if plans already exist
-  const { data: existingPlans, error } = await supabase
-    .from("subscription_plans")
-    .select("name")
+  // Check if we have subscription plans
+  const { data: plans, error } = await supabase
+    .from('subscription_plans')
+    .select('id')
     .limit(1);
     
   if (error) {
-    console.error("Error checking for subscription plans:", error);
+    console.error('Error checking subscription plans:', error);
     return;
   }
   
-  // If plans already exist, no need to create them
-  if (existingPlans && existingPlans.length > 0) {
+  // If we already have plans, we're good
+  if (plans && plans.length > 0) {
     return;
   }
   
-  // Define the default plans
+  // Otherwise, create the default plans
   const defaultPlans = [
     {
-      name: "Free",
+      name: 'Free',
+      description: 'Basic access with limited transformations',
       price: 0,
       included_images: 5,
-      description: "Free tier with limited images"
+      features: ['5 image transformations per month', 'Basic AI enhancement', 'Standard resolution output']
     },
     {
-      name: "Basic",
+      name: 'Pro',
+      description: 'Professional access with more transformations',
       price: 9.99,
-      included_images: 20,
-      description: "Basic plan for regular users"
-    },
-    {
-      name: "Professional",
-      price: 19.99,
       included_images: 50,
-      description: "Professional plan for power users"
+      features: ['50 image transformations per month', 'Advanced AI enhancement', 'High resolution output', 'Priority support']
     },
     {
-      name: "Pay Per Image",
-      price: 19.99,
-      included_images: 25,
-      description: "Pay as you go for occasional use"
+      name: 'Business',
+      description: 'Enterprise-grade access with unlimited transformations',
+      price: 29.99,
+      included_images: 200,
+      features: ['200 image transformations per month', 'Premium AI enhancement', 'Ultra high resolution output', 'Dedicated support', 'Commercial usage rights']
     }
   ];
   
-  // Insert the default plans
   const { error: insertError } = await supabase
-    .from("subscription_plans")
+    .from('subscription_plans')
     .insert(defaultPlans);
     
   if (insertError) {
-    console.error("Error creating subscription plans:", insertError);
-  } else {
-    console.log("Default subscription plans created successfully");
+    console.error('Error creating default subscription plans:', insertError);
   }
 }

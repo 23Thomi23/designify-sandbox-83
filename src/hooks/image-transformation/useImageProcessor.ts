@@ -57,6 +57,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         }
       }
 
+      // Convert the image to base64
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -66,6 +67,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       setProcessingPhase('Analyzing your space...');
       setProcessingProgress(15);
 
+      // Prepare the prompt
       const roomPrefix = selectedRoom ? `A ${selectedRoom} with ` : '';
       const stylePrompt = STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS];
       const fullPrompt = `${roomPrefix}${stylePrompt} High quality, photorealistic.`;
@@ -78,6 +80,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         imageSize: encodeURI(base64Image).split(',').length 
       });
       
+      // Call the Edge Function to process the image
       const response = await supabase.functions.invoke('replicate', {
         body: {
           image: base64Image,
@@ -88,6 +91,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
 
       console.log("Replicate function response:", response);
 
+      // Handle limit exceeded error
       if (response.data && response.data.limitExceeded) {
         setError('You have reached your subscription limit');
         toast.error('Subscription limit reached. Please upgrade your plan to continue.');
@@ -95,6 +99,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         return false;
       }
 
+      // Handle other errors
       if (response.error) {
         console.error('Supabase function error:', response.error);
         setError(`Service error: ${response.error.message || 'Failed to process image'}. Please try again later.`);
@@ -114,6 +119,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       setProcessingPhase('Enhancing with AI upscaler...');
       setProcessingProgress(75);
 
+      // Check if we received an output
       if (!response.data || !response.data.output) {
         console.error('No output received from API');
         setError('Error: No image was returned from the service. Please try a different image.');
@@ -122,11 +128,13 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         return false;
       }
 
+      // Small delay for UI effect
       await new Promise(resolve => setTimeout(resolve, 800));
       setProcessingProgress(100);
       
+      // Set the transformed image
       setTransformedImage(response.data.output);
-      toast.success('Transformation complete with enhanced clarity!');
+      toast.success('Transformation complete!');
       
       // Trigger the callback on success to fetch the updated usage stats
       onSuccess();

@@ -84,7 +84,7 @@ serve(async (req) => {
     // Enhance the image with upscaler
     const finalImage = await enhanceWithUpscaler(REPLICATE_API_KEY, generatedImage);
 
-    // Update user usage and log processing
+    // Update user usage and log processing - IMPORTANT: this increments the used_images count
     await updateUserUsage(userId);
     await logProcessing(userId, finalImage);
 
