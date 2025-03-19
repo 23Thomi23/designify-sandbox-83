@@ -25,6 +25,7 @@ export async function enhanceWithUpscaler(
           "dfad41707589d68ecdccd1dfa600d55a208f9310748e44bfe35b4a6291453d5e",
         input: {
           image: imageUrl,
+          output_format: "png", // Request PNG format from the upscaler
         },
       }),
     },

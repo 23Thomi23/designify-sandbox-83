@@ -104,10 +104,39 @@ const History = () => {
       if (!response.ok) throw new Error('Failed to download image');
       
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      
+      // Convert the blob to PNG format if it's not already
+      let downloadBlob = blob;
+      if (blob.type !== 'image/png') {
+        // Create a canvas to convert the image to PNG
+        const img = new Image();
+        img.src = URL.createObjectURL(blob);
+        
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const pngBlob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob(blob => resolve(blob!), 'image/png', 1.0);
+          });
+          downloadBlob = pngBlob;
+        }
+        
+        // Clean up the temporary object URL
+        URL.revokeObjectURL(img.src);
+      }
+      
+      // Create download link for the PNG image
+      const url = window.URL.createObjectURL(downloadBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `enhanced-image-${Date.now()}.webp`;
+      link.download = `enhanced-image-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

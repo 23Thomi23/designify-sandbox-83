@@ -38,7 +38,7 @@ async function uploadImageToStorage(userId: string, imageUrl: string): Promise<s
     }
     
     const imageBuffer = await imageResponse.arrayBuffer();
-    const fileName = `${Date.now()}.webp`;
+    const fileName = `${Date.now()}.png`;
     const filePath = `${userId}/${fileName}`;
     
     // Upload to Supabase storage
@@ -46,7 +46,7 @@ async function uploadImageToStorage(userId: string, imageUrl: string): Promise<s
       .storage
       .from('enhanced_images')
       .upload(filePath, imageBuffer, {
-        contentType: 'image/webp',
+        contentType: 'image/png',
         upsert: false
       });
     
