@@ -41,15 +41,21 @@ export const fetchUserSubscription = async (userId: string): Promise<Subscriptio
       .maybeSingle();
       
     if (error) {
-      // Log the full error for debugging
-      console.error('Error fetching subscription:', error);
-      throw error;
+      // Only throw if it's not a "no rows returned" error
+      if (!error.message.includes('no rows')) {
+        console.error('Error fetching subscription:', error);
+        throw error;
+      }
     }
     
     console.log('Subscription found:', data);
     return data;
   } catch (error) {
     console.error('Error in fetchUserSubscription:', error);
+    // Don't throw error for "no subscription" - it's a valid state
+    if (error instanceof Error && error.message.includes('no rows')) {
+      return null;
+    }
     throw error;
   }
 };
@@ -107,6 +113,24 @@ export const createSubscription = async (planId: string, userId: string): Promis
   console.log('Creating subscription for user:', userId, 'with plan:', planId);
   
   try {
+    // For free plans, handle differently
+    if (!planId) {
+      console.log('No plan ID provided, assuming direct payment link');
+      return { success: true };
+    }
+    
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('price')
+      .eq('id', planId)
+      .single();
+      
+    if (plan && plan.price === 0) {
+      console.log('Free plan selected, no payment needed');
+      // For free plans, we could activate them directly
+      return { success: true };
+    }
+    
     const response = await supabase.functions.invoke('create-checkout', {
       body: {
         planId,

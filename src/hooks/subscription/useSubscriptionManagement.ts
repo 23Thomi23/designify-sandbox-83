@@ -25,7 +25,7 @@ export const useSubscriptionManagement = () => {
     cancelling,
     subscription,
     availablePlans,
-    handleCancelSubscription: () => handleCancelSubscription(subscription!),
+    handleCancelSubscription: () => subscription ? handleCancelSubscription(subscription) : undefined,
     handleSubscribe: (planId: string, planName: string) => handleSubscribe(planId, planName, availablePlans),
     formatDate: formatSubscriptionDate,
     error

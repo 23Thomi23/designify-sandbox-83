@@ -1,3 +1,4 @@
+
 import { BackButton } from '@/components/BackButton';
 import { useSubscriptionManagement } from '@/hooks/subscription/useSubscriptionManagement';
 
@@ -10,6 +11,7 @@ import { SecurePaymentInfo } from '@/components/subscription/SecurePaymentInfo';
 import LoadingState from '@/components/subscription/LoadingState';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
+import { ErrorDisplay } from '@/components/transformation/ErrorDisplay';
 
 const SubscriptionPage = () => {
   const {
@@ -37,6 +39,13 @@ const SubscriptionPage = () => {
       <BackButton />
       <h1 className="text-3xl font-bold mb-6">Subscription Management</h1>
       
+      {error && (
+        <ErrorDisplay 
+          error="Error loading subscription information"
+          details="There was a problem retrieving your subscription data. Please try again or contact support."
+        />
+      )}
+      
       {loading ? (
         <LoadingState message="Loading subscription information..." />
       ) : (
@@ -63,7 +72,7 @@ const SubscriptionPage = () => {
               {/* Pay Per Image Card */}
               <PayPerImageCard 
                 creating={creating}
-                onSubscribe={() => handleSubscribe("", "Business")}
+                onSubscribe={() => handleSubscribe("", "Pay Per Image")}
               />
               
               {availablePlans.map((plan) => (

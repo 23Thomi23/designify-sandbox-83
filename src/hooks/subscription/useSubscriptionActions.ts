@@ -20,6 +20,11 @@ export const useSubscriptionActions = ({ setSubscription }: UseSubscriptionActio
   const [cancelling, setCancelling] = useState(false);
   
   const handleCancelSubscription = async (subscription: Subscription) => {
+    if (!subscription) {
+      toast.error('No subscription to cancel');
+      return;
+    }
+    
     setCancelling(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -44,7 +49,7 @@ export const useSubscriptionActions = ({ setSubscription }: UseSubscriptionActio
         cancel_at_period_end: true
       });
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error cancelling subscription:', err);
       toast.error('Failed to cancel subscription', {
         description: 'Please try again later or contact support.'
       });
@@ -57,6 +62,7 @@ export const useSubscriptionActions = ({ setSubscription }: UseSubscriptionActio
     // Check for direct links for specific plans
     const directUrl = getDirectPlanUrl(planName);
     if (directUrl) {
+      console.log(`Redirecting to direct URL for ${planName}: ${directUrl}`);
       window.location.href = directUrl;
       return;
     }
@@ -102,6 +108,7 @@ export const useSubscriptionActions = ({ setSubscription }: UseSubscriptionActio
         const response = await createSubscription(planId || "", session.user.id);
         
         if (response.url) {
+          console.log(`Redirecting to Stripe checkout: ${response.url}`);
           window.location.href = response.url;
         } else {
           throw new Error('Invalid response from server');
@@ -109,7 +116,7 @@ export const useSubscriptionActions = ({ setSubscription }: UseSubscriptionActio
       }
     } catch (err) {
       const error = err as Error;
-      console.error('Error:', error);
+      console.error('Subscription creation error:', error);
       toast.error('Checkout Failed', {
         description: error.message || 'An unexpected error occurred'
       });
