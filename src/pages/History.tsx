@@ -5,8 +5,9 @@ import { BackButton } from '@/components/BackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Clock } from 'lucide-react';
+import { Download, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface HistoryItem {
   id: string;
@@ -19,6 +20,7 @@ interface HistoryItem {
 const History = () => {
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -34,12 +36,14 @@ const History = () => {
             
           if (error) {
             console.error('Error fetching history:', error);
+            toast.error('Failed to load history');
           } else {
             setHistoryItems(data || []);
           }
         }
       } catch (error) {
         console.error('Error:', error);
+        toast.error('Failed to load history');
       } finally {
         setIsLoading(false);
       }
@@ -48,20 +52,49 @@ const History = () => {
     fetchHistory();
   }, []);
 
-  const handleDownload = async (imageUrl: string) => {
+  const handleDownload = async (imageUrl: string, id: string) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'enhanced-image.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      setDownloadingId(id);
+      
+      const isSupabaseUrl = imageUrl.includes('/storage/v1/object/public/enhanced_images/');
+      
+      if (isSupabaseUrl) {
+        // For Supabase storage URLs, we can use the storage API directly
+        const path = imageUrl.split('/enhanced_images/')[1];
+        const { data, error } = await supabase.storage.from('enhanced_images').download(path);
+        
+        if (error) throw error;
+        
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `enhanced-image-${Date.now()}.webp`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // For external URLs, use the fetch API
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error('Failed to download image');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `enhanced-image-${Date.now()}.webp`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+      
+      toast.success('Image downloaded successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
+      toast.error('Failed to download image');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -103,7 +136,7 @@ const History = () => {
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="text-sm text-muted-foreground">
-                          {item.processing_type || 'Property Enhancement'}
+                          {item.processing_type === 'interior_design' ? 'Property Enhancement' : 'Image Enhancement'}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {format(new Date(item.created_at), 'PPP')}
@@ -116,9 +149,14 @@ const History = () => {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => handleDownload(item.enhanced_image)}
+                      onClick={() => handleDownload(item.enhanced_image, item.id)}
+                      disabled={downloadingId === item.id}
                     >
-                      <Download className="w-4 h-4 mr-2" />
+                      {downloadingId === item.id ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
                       Download
                     </Button>
                   </CardFooter>

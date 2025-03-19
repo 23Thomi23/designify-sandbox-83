@@ -3,6 +3,9 @@ import { Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface TransformationViewProps {
   originalImage: string | null;
@@ -21,22 +24,54 @@ export const TransformationView = ({
   processingProgress = 0,
   className,
 }: TransformationViewProps) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handleDownload = async () => {
     if (!transformedImage) return;
     
     try {
-      const response = await fetch(transformedImage);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'enhanced-image.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      setIsDownloading(true);
+      
+      // Determine if this is a supabase URL
+      const isSupabaseUrl = transformedImage.includes('/storage/v1/object/public/enhanced_images/');
+      
+      if (isSupabaseUrl) {
+        // For Supabase storage URLs, we can use the storage API directly
+        const path = transformedImage.split('/enhanced_images/')[1];
+        const { data, error } = await supabase.storage.from('enhanced_images').download(path);
+        
+        if (error) throw error;
+        
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `enhanced-image-${Date.now()}.webp`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // For external URLs, use the fetch API
+        const response = await fetch(transformedImage);
+        if (!response.ok) throw new Error('Failed to download image');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `enhanced-image-${Date.now()}.webp`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+      
+      toast.success('Image downloaded successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
+      toast.error('Failed to download image');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -83,9 +118,14 @@ export const TransformationView = ({
                 variant="secondary"
                 size="icon"
                 onClick={handleDownload}
+                disabled={isDownloading}
                 className="rounded-full bg-background/95 backdrop-blur-sm shadow-sm hover:bg-background"
               >
-                <Download className="h-4 w-4" />
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </>

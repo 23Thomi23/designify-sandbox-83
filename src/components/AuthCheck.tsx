@@ -51,6 +51,15 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
               });
           }
         }
+
+        // Ensure storage access is available
+        try {
+          // Test storage bucket access by listing files (this will validate permissions)
+          await supabase.storage.from('enhanced_images').list(`${session.user.id}`);
+        } catch (storageError) {
+          console.error('Storage access error:', storageError);
+          // We'll continue even if there's an error as this is just a permission check
+        }
       } catch (error) {
         console.error('Error checking user consumption:', error);
       }
