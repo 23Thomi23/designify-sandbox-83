@@ -23,7 +23,7 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
           .eq('user_id', session.user.id)
           .single();
           
-        // If no consumption data exists, create one with free tier settings (5 images)
+        // If no consumption data exists, create one with free tier settings
         if (error && error.code === 'PGRST116') {
           const { data: freePlan, error: planError } = await supabase
             .from('subscription_plans')
@@ -33,6 +33,7 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
             
           if (planError) {
             console.error('Error fetching free plan:', planError);
+            toast.error('Error initializing your account. Please refresh or contact support.');
             return;
           }
             
@@ -49,11 +50,12 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
               
             if (insertError) {
               console.error('Error creating consumption record:', insertError);
+              toast.error('Error setting up your account. Please refresh or contact support.');
               return;
             }
               
             // Also create a subscription record
-            await supabase
+            const { error: subscriptionError } = await supabase
               .from('user_subscriptions')
               .insert({
                 user_id: session.user.id,
@@ -61,6 +63,10 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
                 status: 'active',
                 current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
               });
+              
+            if (subscriptionError) {
+              console.error('Error creating subscription record:', subscriptionError);
+            }
               
             toast.info(`Welcome! You have ${defaultImageCount} free images to transform.`);
           }
