@@ -59,6 +59,7 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
       return;
     }
 
+    // Process the image, and if successful the callback will refresh usage stats
     await processImage(selectedImage, selectedRoom, selectedStyle);
   };
 

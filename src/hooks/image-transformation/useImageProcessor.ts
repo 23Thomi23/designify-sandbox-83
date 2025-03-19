@@ -24,25 +24,37 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
     setTransformedImage(null);
     
     try {
-      // Verify the user has not reached their image limit before proceeding
-      const { data: consumption, error: consumptionError } = await supabase
-        .from('image_consumption')
-        .select('available_images, used_images')
-        .eq('user_id', userId)
+      // Get user profile to check if they're a legacy user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_legacy_user')
+        .eq('id', userId)
         .single();
         
-      if (consumptionError) {
-        console.error('Error fetching usage data:', consumptionError);
-        setError('Could not verify subscription status. Please try again later.');
-        toast.error('Error checking subscription status');
-        return false;
-      }
-      
-      // Strict limit enforcement - don't process if user is at or above their limit
-      if (consumption && consumption.used_images >= consumption.available_images) {
-        setError('You have reached your subscription limit');
-        toast.error('Subscription limit reached. Please upgrade your plan to continue.');
-        return false;
+      // If not a legacy user, strictly verify the image limit
+      if (!profileData?.is_legacy_user) {
+        // Verify the user has not reached their image limit before proceeding
+        const { data: consumption, error: consumptionError } = await supabase
+          .from('image_consumption')
+          .select('available_images, used_images')
+          .eq('user_id', userId)
+          .single();
+          
+        if (consumptionError) {
+          console.error('Error fetching usage data:', consumptionError);
+          setError('Could not verify subscription status. Please try again later.');
+          toast.error('Error checking subscription status');
+          setIsLoading(false);
+          return false;
+        }
+        
+        // Strict limit enforcement - don't process if user is at or above their limit
+        if (consumption && consumption.used_images >= consumption.available_images) {
+          setError('You have reached your subscription limit');
+          toast.error('Subscription limit reached. Please upgrade your plan to continue.');
+          setIsLoading(false);
+          return false;
+        }
       }
 
       const base64Image = await new Promise<string>((resolve) => {
@@ -79,6 +91,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       if (response.data && response.data.limitExceeded) {
         setError('You have reached your subscription limit');
         toast.error('Subscription limit reached. Please upgrade your plan to continue.');
+        setIsLoading(false);
         return false;
       }
 
@@ -86,6 +99,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         console.error('Supabase function error:', response.error);
         setError(`Service error: ${response.error.message || 'Failed to process image'}. Please try again later.`);
         toast.error('Failed to transform image');
+        setIsLoading(false);
         return false;
       }
 
@@ -93,6 +107,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         console.error('Replicate API error:', response.data.error);
         setError(`API error: ${response.data.error || 'Failed to process image'}. Please try a different image.`);
         toast.error('Failed to transform image');
+        setIsLoading(false);
         return false;
       }
 
@@ -103,6 +118,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         console.error('No output received from API');
         setError('Error: No image was returned from the service. Please try a different image.');
         toast.error('Failed to transform image');
+        setIsLoading(false);
         return false;
       }
 
@@ -112,13 +128,14 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       setTransformedImage(response.data.output);
       toast.success('Transformation complete with enhanced clarity!');
       
-      // Trigger the callback on success
+      // Trigger the callback on success to fetch the updated usage stats
       onSuccess();
       return true;
     } catch (error: any) {
       console.error('Transformation error:', error);
       setError(`Error: ${error?.message || 'An unexpected error occurred'}. Please try again.`);
       toast.error('Failed to transform image');
+      setIsLoading(false);
       return false;
     } finally {
       setIsLoading(false);

@@ -34,8 +34,27 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
   }
 
   if (!usageData) {
-    console.error("No usage data found for user:", userId);
-    return true; // If we have no data, assume limit reached for safety
+    console.log("No usage data found for user:", userId);
+    
+    // Create a default consumption record for new users (free tier - 5 images)
+    const { data: freePlan } = await supabase
+      .from("subscription_plans")
+      .select("included_images")
+      .eq("name", "Free")
+      .single();
+      
+    const defaultLimit = freePlan?.included_images || 5;
+    
+    await supabase
+      .from("image_consumption")
+      .insert({
+        user_id: userId,
+        available_images: defaultLimit,
+        used_images: 0
+      });
+      
+    console.log(`Created initial usage record for user ${userId} with ${defaultLimit} images`);
+    return false; // New users have their initial allocation
   }
 
   // Strict limit check - ensure user hasn't met or exceeded their limit

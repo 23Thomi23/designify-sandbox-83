@@ -18,6 +18,22 @@ export async function updateUserUsage(userId: string): Promise<void> {
   if (!profileData?.is_legacy_user) {
     // Increment used images
     await supabase.rpc("increment_image_usage", { user_id: userId });
+    
+    // Log the increment for debugging
+    console.log(`Image usage incremented for user ${userId}`);
+    
+    // Fetch and log the updated usage for verification
+    const { data: updatedUsage, error } = await supabase
+      .from("image_consumption")
+      .select("used_images, available_images")
+      .eq("id", userId)
+      .single();
+      
+    if (!error && updatedUsage) {
+      console.log(`User ${userId} now has ${updatedUsage.used_images}/${updatedUsage.available_images} images used`);
+    }
+  } else {
+    console.log(`User ${userId} is a legacy user, not incrementing usage`);
   }
 }
 

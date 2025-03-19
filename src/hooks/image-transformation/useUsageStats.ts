@@ -12,6 +12,21 @@ export const useUsageStats = (userId: string) => {
   // Fetch user's subscription and usage data
   const fetchUsageData = async () => {
     try {
+      console.log("Fetching usage data for user:", userId);
+      
+      // Get user profile to check if they're a legacy user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_legacy_user')
+        .eq('id', userId)
+        .single();
+        
+      // Legacy users are not subject to limits
+      if (profileData?.is_legacy_user) {
+        console.log("User is a legacy user, no limits apply");
+        return;
+      }
+      
       // Fetch user's image consumption data
       const { data: consumptionData, error: consumptionError } = await supabase
         .from('image_consumption')
@@ -24,22 +39,14 @@ export const useUsageStats = (userId: string) => {
         return;
       }
       
-      // Get user profile to check if they're a legacy user
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('is_legacy_user')
-        .eq('id', userId)
-        .single();
-        
-      // Legacy users are not subject to limits
-      if (profileData?.is_legacy_user) {
-        return;
-      }
+      console.log("Consumption data:", consumptionData);
       
       if (consumptionData) {
         const usedImages = consumptionData.used_images;
         const availableImages = consumptionData.available_images;
         const remainingImages = Math.max(0, availableImages - usedImages);
+        
+        console.log(`User has ${remainingImages} images remaining (${usedImages}/${availableImages} used)`);
         
         setUsageStats({
           usedImages,
@@ -51,7 +58,14 @@ export const useUsageStats = (userId: string) => {
         if (remainingImages <= 2 && remainingImages > 0) {
           toast.warning(`You have only ${remainingImages} image${remainingImages === 1 ? '' : 's'} left in your plan.`);
         }
+        
+        // If user is out of images, show a notification
+        if (remainingImages === 0) {
+          toast.error('You have reached your image transformation limit. Please upgrade your plan to continue.');
+        }
       } else {
+        console.log("No consumption data found, creating default entry");
+        
         // Create a default consumption record for new users (free tier - 5 images)
         const { data: subscriptionData } = await supabase
           .from('subscription_plans')
@@ -120,6 +134,8 @@ export const useUsageStats = (userId: string) => {
       
       // If user has used all their images, show the limit dialog
       if (consumption && consumption.used_images >= consumption.available_images) {
+        console.log("User has reached their limit, showing upgrade dialog");
+        
         const { data: plans } = await supabase
           .from('subscription_plans')
           .select('*')
