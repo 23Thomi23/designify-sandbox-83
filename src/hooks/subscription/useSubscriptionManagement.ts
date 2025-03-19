@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   fetchUserSubscription, 
@@ -14,18 +16,20 @@ import { formatSubscriptionDate, getDirectPlanUrl } from './subscription-utils';
 
 export const useSubscriptionManagement = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: toastUI } = useToast();
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     fetchSubscriptionData();
   }, []);
 
   const fetchSubscriptionData = async () => {
+    setError(null);
     try {
       console.log('Getting user session');
       const { data: { session } } = await supabase.auth.getSession();
@@ -44,35 +48,29 @@ export const useSubscriptionManagement = () => {
         if (subscriptionData) {
           setSubscription(subscriptionData);
         }
-      } catch (error) {
+      } catch (err) {
+        const error = err as Error;
         console.error('Error in fetchUserSubscription:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load subscription data',
-          variant: 'destructive',
-        });
+        // Don't set error state for "no subscription" cases
+        if (!(error.message && error.message.includes('no rows'))) {
+          setError('subscription');
+        }
       }
       
       try {
         const plansData = await fetchAvailablePlans();
         console.log('Plans data found:', plansData.length);
         setAvailablePlans(plansData);
-      } catch (error) {
-        console.error('Error in fetchAvailablePlans:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load subscription plans',
-          variant: 'destructive',
-        });
+      } catch (err) {
+        console.error('Error in fetchAvailablePlans:', err);
+        setError('plans');
+        toast.error('Error loading subscription plans');
       }
       
-    } catch (error) {
-      console.error('General error in fetchSubscriptionData:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+    } catch (err) {
+      console.error('General error in fetchSubscriptionData:', err);
+      setError('general');
+      toast.error('Error loading subscription data');
     } finally {
       setLoading(false);
     }
@@ -94,21 +92,18 @@ export const useSubscriptionManagement = () => {
       
       await cancelSubscription(subscription.stripe_subscription_id);
       
-      toast({
-        title: 'Subscription Cancelled',
-        description: 'Your subscription has been cancelled and will end at the current billing period.',
+      toast.success('Subscription Cancelled', {
+        description: 'Your subscription has been cancelled and will end at the current billing period.'
       });
       
       setSubscription({
         ...subscription,
         cancel_at_period_end: true
       });
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error('Failed to cancel subscription', {
+        description: 'Please try again later or contact support.'
       });
     } finally {
       setCancelling(false);
@@ -128,47 +123,40 @@ export const useSubscriptionManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          variant: 'destructive',
-          title: 'Authentication Required',
-          description: 'Please sign in to continue with checkout.',
+        toast.error('Authentication Required', {
+          description: 'Please sign in to continue with checkout.'
         });
         navigate('/auth');
         return;
       }
       
       const plan = availablePlans.find(p => p.id === planId);
-      if (!plan) {
-        toast({
-          variant: 'destructive',
-          title: 'Plan Error',
-          description: 'Selected plan not found.',
+      if (!plan && planId) {
+        toast.error('Plan Error', {
+          description: 'Selected plan not found.'
         });
         return;
       }
       
-      if (plan.price === 0) {
-        toast({
-          title: 'Processing',
-          description: 'Activating your free plan...',
+      if (plan && plan.price === 0) {
+        toast.info('Processing', {
+          description: 'Activating your free plan...'
         });
         
         const response = await createSubscription(planId, session.user.id);
         
         if (response.success) {
-          toast({
-            title: 'Success!',
-            description: 'Your free plan has been activated.',
+          toast.success('Success!', {
+            description: 'Your free plan has been activated.'
           });
           window.location.reload();
         }
       } else {
-        toast({
-          title: 'Redirecting',
-          description: 'Preparing checkout...',
+        toast.info('Redirecting', {
+          description: 'Preparing checkout...'
         });
         
-        const response = await createSubscription(planId, session.user.id);
+        const response = await createSubscription(planId || "", session.user.id);
         
         if (response.url) {
           window.location.href = response.url;
@@ -176,12 +164,11 @@ export const useSubscriptionManagement = () => {
           throw new Error('Invalid response from server');
         }
       }
-    } catch (error) {
+    } catch (err) {
+      const error = err as Error;
       console.error('Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Checkout Failed',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      toast.error('Checkout Failed', {
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
       setCreating(false);
@@ -196,6 +183,7 @@ export const useSubscriptionManagement = () => {
     availablePlans,
     handleCancelSubscription,
     handleSubscribe,
-    formatDate: formatSubscriptionDate
+    formatDate: formatSubscriptionDate,
+    error
   };
 };
