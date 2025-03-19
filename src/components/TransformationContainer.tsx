@@ -23,6 +23,7 @@ interface TransformationContainerProps {
   onStyleSelect: (styleId: string) => void;
   onRoomSelect: (room: Room) => void;
   onTransform: () => void;
+  remainingImages?: number;
 }
 
 export const TransformationContainer = ({
@@ -40,6 +41,7 @@ export const TransformationContainer = ({
   onStyleSelect,
   onRoomSelect,
   onTransform,
+  remainingImages,
 }: TransformationContainerProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -63,6 +65,7 @@ export const TransformationContainer = ({
           onClick={onTransform} 
           disabled={!selectedImage || !selectedRoom || isLoading}
           isLoading={isLoading}
+          remainingImages={remainingImages}
         />
       </div>
 
