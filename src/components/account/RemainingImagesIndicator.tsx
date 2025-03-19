@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { ImageIcon } from 'lucide-react';
+import { ImageIcon, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const RemainingImagesIndicator = () => {
@@ -17,6 +17,20 @@ export const RemainingImagesIndicator = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          setLoading(false);
+          return;
+        }
+        
+        // Get user profile to check if they're a legacy user
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('is_legacy_user')
+          .eq('id', session.user.id)
+          .single();
+          
+        // Legacy users don't have limits
+        if (profileData?.is_legacy_user) {
+          setRemainingImages(null);
           setLoading(false);
           return;
         }
@@ -42,6 +56,13 @@ export const RemainingImagesIndicator = () => {
     };
     
     fetchRemainingImages();
+    
+    // Set up a listener for auth changes to update the indicator
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchRemainingImages();
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading || remainingImages === null) {
@@ -50,6 +71,13 @@ export const RemainingImagesIndicator = () => {
 
   const handleClick = () => {
     navigate('/account');
+  };
+  
+  // Determine the variant based on remaining images
+  const getVariant = () => {
+    if (remainingImages <= 0) return "destructive";
+    if (remainingImages <= 2) return "warning";
+    return "secondary";
   };
 
   return (
@@ -60,17 +88,25 @@ export const RemainingImagesIndicator = () => {
             className="flex items-center cursor-pointer space-x-1 px-2 py-1 rounded-md hover:bg-accent transition-colors"
             onClick={handleClick}
           >
-            <ImageIcon size={14} />
+            {remainingImages <= 0 ? (
+              <AlertTriangle size={14} className="text-destructive" />
+            ) : (
+              <ImageIcon size={14} />
+            )}
             <Badge 
-              variant={remainingImages <= 2 ? "destructive" : "secondary"} 
+              variant={getVariant()} 
               className="text-xs"
             >
-              {remainingImages} image{remainingImages !== 1 ? 's' : ''} left
+              {remainingImages === 0 
+                ? "No images left" 
+                : `${remainingImages} image${remainingImages !== 1 ? 's' : ''} left`}
             </Badge>
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Click to view account details</p>
+          {remainingImages <= 0 
+            ? "You've reached your limit. Click to upgrade."
+            : "Click to view account details"}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -45,28 +45,28 @@ serve(async (req) => {
       });
     }
 
-    // Check subscription limits if userId is provided
-    if (userId) {
-      const limitExceeded = await checkSubscriptionLimits(userId);
-      if (limitExceeded) {
-        return new Response(
-          JSON.stringify({
-            limitExceeded: true,
-            message:
-              "You have reached your subscription limit for this period",
-          }),
-          {
-            status: 403, // Change to a clearer status code for limit exceeded
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-    } else {
-      // If no userId is provided, we should not process the image
+    // Check authentication
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
         {
           status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Strictly check subscription limits before processing
+    const limitExceeded = await checkSubscriptionLimits(userId);
+    if (limitExceeded) {
+      console.log(`User ${userId} has exceeded their subscription limit. Rejecting request.`);
+      return new Response(
+        JSON.stringify({
+          limitExceeded: true,
+          message: "You have reached your subscription limit for this period",
+        }),
+        {
+          status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );

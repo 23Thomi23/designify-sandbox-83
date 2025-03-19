@@ -18,17 +18,41 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
     selectedStyle: string
   ) => {
     setIsLoading(true);
-    setProcessingPhase('Analyzing your space...');
-    setProcessingProgress(10);
+    setProcessingPhase('Checking subscription limits...');
+    setProcessingProgress(5);
     setError(null);
     setTransformedImage(null);
     
     try {
+      // Verify the user has not reached their image limit before proceeding
+      const { data: consumption, error: consumptionError } = await supabase
+        .from('image_consumption')
+        .select('available_images, used_images')
+        .eq('user_id', userId)
+        .single();
+        
+      if (consumptionError) {
+        console.error('Error fetching usage data:', consumptionError);
+        setError('Could not verify subscription status. Please try again later.');
+        toast.error('Error checking subscription status');
+        return false;
+      }
+      
+      // Strict limit enforcement - don't process if user is at or above their limit
+      if (consumption && consumption.used_images >= consumption.available_images) {
+        setError('You have reached your subscription limit');
+        toast.error('Subscription limit reached. Please upgrade your plan to continue.');
+        return false;
+      }
+
       const base64Image = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
         reader.readAsDataURL(selectedImage);
       });
+
+      setProcessingPhase('Analyzing your space...');
+      setProcessingProgress(15);
 
       const roomPrefix = selectedRoom ? `A ${selectedRoom} with ` : '';
       const stylePrompt = STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS];

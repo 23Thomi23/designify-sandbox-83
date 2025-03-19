@@ -17,6 +17,7 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
     .single();
 
   if (profileData?.is_legacy_user) {
+    console.log(`User ${userId} is a legacy user, no limits applied`);
     return false; // Legacy users are not limited
   }
 
@@ -37,6 +38,7 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
     return true; // If we have no data, assume limit reached for safety
   }
 
+  // Strict limit check - ensure user hasn't met or exceeded their limit
   if (usageData.used_images >= usageData.available_images) {
     console.log(
       `User ${userId} has reached their limit: ${usageData.used_images}/${usageData.available_images}`,
@@ -44,6 +46,9 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
     return true; // Limit exceeded
   }
 
+  console.log(
+    `User ${userId} has ${usageData.available_images - usageData.used_images} images remaining`,
+  );
   return false; // User has available images
 }
 
