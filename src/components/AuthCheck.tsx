@@ -40,6 +40,23 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
           if (freePlan) {
             const defaultImageCount = freePlan.included_images || 5;
             
+            // First create the subscription record
+            const { error: subscriptionError } = await supabase
+              .from('user_subscriptions')
+              .insert({
+                user_id: session.user.id,
+                subscription_id: freePlan.id,
+                status: 'active',
+                current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+              });
+              
+            if (subscriptionError) {
+              console.error('Error creating subscription record:', subscriptionError);
+              toast.error('Error setting up your account. Please try again or contact support.');
+              return;
+            }
+            
+            // After subscription is created, create the consumption record
             const { error: insertError } = await supabase
               .from('image_consumption')
               .insert({
@@ -52,20 +69,6 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
               console.error('Error creating consumption record:', insertError);
               toast.error('Error setting up your account. Please refresh or contact support.');
               return;
-            }
-              
-            // Also create a subscription record
-            const { error: subscriptionError } = await supabase
-              .from('user_subscriptions')
-              .insert({
-                user_id: session.user.id,
-                subscription_id: freePlan.id,
-                status: 'active',
-                current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-              });
-              
-            if (subscriptionError) {
-              console.error('Error creating subscription record:', subscriptionError);
             }
               
             toast.info(`Welcome! You have ${defaultImageCount} free images to transform.`);
