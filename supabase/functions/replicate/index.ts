@@ -56,11 +56,20 @@ serve(async (req) => {
               "You have reached your subscription limit for this period",
           }),
           {
-            status: 200,
+            status: 403, // Change to a clearer status code for limit exceeded
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           },
         );
       }
+    } else {
+      // If no userId is provided, we should not process the image
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Generate the initial transformation
@@ -75,11 +84,9 @@ serve(async (req) => {
     // Enhance the image with upscaler
     const finalImage = await enhanceWithUpscaler(REPLICATE_API_KEY, generatedImage);
 
-    // Update user usage and log processing if userId is provided
-    if (userId) {
-      await updateUserUsage(userId);
-      await logProcessing(userId, finalImage);
-    }
+    // Update user usage and log processing
+    await updateUserUsage(userId);
+    await logProcessing(userId, finalImage);
 
     // Return the final image
     return new Response(JSON.stringify({ output: finalImage }), {

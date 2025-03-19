@@ -25,20 +25,32 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
           
         // If no consumption data exists, create one with free tier settings (5 images)
         if (error && error.code === 'PGRST116') {
-          const { data: freePlan } = await supabase
+          const { data: freePlan, error: planError } = await supabase
             .from('subscription_plans')
             .select('id, included_images')
             .eq('name', 'Free')
             .single();
             
+          if (planError) {
+            console.error('Error fetching free plan:', planError);
+            return;
+          }
+            
           if (freePlan) {
-            await supabase
+            const defaultImageCount = freePlan.included_images || 5;
+            
+            const { error: insertError } = await supabase
               .from('image_consumption')
               .insert({
                 user_id: session.user.id,
-                available_images: freePlan.included_images || 5,
+                available_images: defaultImageCount,
                 used_images: 0
               });
+              
+            if (insertError) {
+              console.error('Error creating consumption record:', insertError);
+              return;
+            }
               
             // Also create a subscription record
             await supabase
@@ -49,10 +61,10 @@ export const AuthCheck = ({ children }: { children: React.ReactNode }) => {
                 status: 'active',
                 current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
               });
+              
+            toast.info(`Welcome! You have ${defaultImageCount} free images to transform.`);
           }
         }
-
-        // Storage bucket checks will now be handled by RLS policies
       } catch (error) {
         console.error('Error checking user consumption:', error);
       }

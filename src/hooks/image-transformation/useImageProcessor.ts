@@ -54,6 +54,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
 
       if (response.data && response.data.limitExceeded) {
         setError('You have reached your subscription limit');
+        toast.error('Subscription limit reached. Please upgrade your plan to continue.');
         return false;
       }
 

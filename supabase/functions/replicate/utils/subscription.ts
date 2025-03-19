@@ -21,13 +21,23 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
   }
 
   // Check user's image consumption limits
-  const { data: usageData } = await supabase
+  const { data: usageData, error } = await supabase
     .from("image_consumption")
     .select("available_images, used_images")
     .eq("user_id", userId)
     .single();
 
-  if (usageData && usageData.used_images >= usageData.available_images) {
+  if (error) {
+    console.error("Error fetching usage data:", error);
+    return true; // If we can't verify, assume limit reached for safety
+  }
+
+  if (!usageData) {
+    console.error("No usage data found for user:", userId);
+    return true; // If we have no data, assume limit reached for safety
+  }
+
+  if (usageData.used_images >= usageData.available_images) {
     console.log(
       `User ${userId} has reached their limit: ${usageData.used_images}/${usageData.available_images}`,
     );
