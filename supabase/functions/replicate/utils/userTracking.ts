@@ -22,10 +22,10 @@ export async function updateUserUsage(userId: string): Promise<void> {
 }
 
 /**
- * Uploads an image to Supabase storage and returns the public URL
+ * Uploads an image to Supabase storage and returns the permanent URL
  * @param userId The user ID who owns the image
  * @param imageUrl The temporary image URL to download and upload to storage
- * @returns The permanent storage URL
+ * @returns The permanent storage URL with signed access token if needed
  */
 async function uploadImageToStorage(userId: string, imageUrl: string): Promise<string> {
   try {
@@ -55,13 +55,16 @@ async function uploadImageToStorage(userId: string, imageUrl: string): Promise<s
       return imageUrl; // Fall back to the original URL if storage fails
     }
     
-    // Get the public URL
-    const { data: publicUrlData } = supabase
+    // Get a signed URL that will work for authenticated access
+    const { data: signedUrlData } = await supabase
       .storage
       .from('enhanced_images')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
     
-    return publicUrlData.publicUrl;
+    // Store the path in the database, not the signed URL (which expires)
+    const storagePath = `${userId}/${fileName}`;
+    
+    return storagePath; // Return the storage path that we'll use to look up the image
   } catch (error) {
     console.error("Error in image upload process:", error);
     return imageUrl; // Fall back to the original URL if anything fails
@@ -77,15 +80,15 @@ export async function logProcessing(userId: string, imageUrl: string): Promise<v
   const supabase = supabaseClient();
   
   // Upload the image to permanent storage
-  const permanentImageUrl = await uploadImageToStorage(userId, imageUrl);
+  const storagePath = await uploadImageToStorage(userId, imageUrl);
   
-  // Log the processing history
+  // Log the processing history with the storage path
   await supabase
     .from("processing_history")
     .insert([{
       user_id: userId,
       original_image: null, // We don't store the original image for privacy
-      enhanced_image: permanentImageUrl,
+      enhanced_image: storagePath,
       processing_type: "interior_design",
     }]);
 }

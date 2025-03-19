@@ -1,9 +1,9 @@
 
+import { useState } from 'react';
 import { Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -32,39 +32,35 @@ export const TransformationView = ({
     try {
       setIsDownloading(true);
       
-      // Determine if this is a supabase URL
-      const isSupabaseUrl = transformedImage.includes('/storage/v1/object/public/enhanced_images/');
+      let imageUrl = transformedImage;
       
-      if (isSupabaseUrl) {
-        // For Supabase storage URLs, we can use the storage API directly
-        const path = transformedImage.split('/enhanced_images/')[1];
-        const { data, error } = await supabase.storage.from('enhanced_images').download(path);
-        
-        if (error) throw error;
-        
-        const url = URL.createObjectURL(data);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `enhanced-image-${Date.now()}.webp`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        // For external URLs, use the fetch API
-        const response = await fetch(transformedImage);
-        if (!response.ok) throw new Error('Failed to download image');
-        
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `enhanced-image-${Date.now()}.webp`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+      // If this is a storage path (not a URL), get a signed URL
+      if (transformedImage && !transformedImage.startsWith('http')) {
+        const { data: signedUrl } = await supabase
+          .storage
+          .from('enhanced_images')
+          .createSignedUrl(transformedImage, 60 * 60); // 1 hour expiry
+          
+        if (signedUrl) {
+          imageUrl = signedUrl.signedUrl;
+        } else {
+          throw new Error('Failed to generate signed URL');
+        }
       }
+      
+      // Download the image
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to download image');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `enhanced-image-${Date.now()}.webp`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast.success('Image downloaded successfully');
     } catch (error) {

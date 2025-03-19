@@ -21,6 +21,7 @@ const History = () => {
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -39,6 +40,28 @@ const History = () => {
             toast.error('Failed to load history');
           } else {
             setHistoryItems(data || []);
+            
+            // Get signed URLs for all images
+            const urls: Record<string, string> = {};
+            for (const item of data || []) {
+              if (item.enhanced_image && !item.enhanced_image.startsWith('http')) {
+                try {
+                  const { data: signedUrl } = await supabase
+                    .storage
+                    .from('enhanced_images')
+                    .createSignedUrl(item.enhanced_image, 60 * 60); // 1 hour expiry
+                    
+                  if (signedUrl) {
+                    urls[item.id] = signedUrl.signedUrl;
+                  }
+                } catch (urlError) {
+                  console.error('Error generating signed URL:', urlError);
+                }
+              } else if (item.enhanced_image) {
+                urls[item.id] = item.enhanced_image;
+              }
+            }
+            setImageUrls(urls);
           }
         }
       } catch (error) {
@@ -52,42 +75,43 @@ const History = () => {
     fetchHistory();
   }, []);
 
-  const handleDownload = async (imageUrl: string, id: string) => {
+  const handleDownload = async (item: HistoryItem) => {
     try {
-      setDownloadingId(id);
+      setDownloadingId(item.id);
       
-      const isSupabaseUrl = imageUrl.includes('/storage/v1/object/public/enhanced_images/');
+      // Get the image URL (either from our imageUrls state or generate a new one)
+      let imageUrl = imageUrls[item.id];
       
-      if (isSupabaseUrl) {
-        // For Supabase storage URLs, we can use the storage API directly
-        const path = imageUrl.split('/enhanced_images/')[1];
-        const { data, error } = await supabase.storage.from('enhanced_images').download(path);
-        
-        if (error) throw error;
-        
-        const url = URL.createObjectURL(data);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `enhanced-image-${Date.now()}.webp`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        // For external URLs, use the fetch API
-        const response = await fetch(imageUrl);
-        if (!response.ok) throw new Error('Failed to download image');
-        
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `enhanced-image-${Date.now()}.webp`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+      // If we don't have a URL yet, try to get one
+      if (!imageUrl && item.enhanced_image && !item.enhanced_image.startsWith('http')) {
+        const { data: signedUrl } = await supabase
+          .storage
+          .from('enhanced_images')
+          .createSignedUrl(item.enhanced_image, 60 * 60); // 1 hour expiry
+          
+        if (signedUrl) {
+          imageUrl = signedUrl.signedUrl;
+          setImageUrls(prev => ({ ...prev, [item.id]: imageUrl }));
+        }
       }
+      
+      if (!imageUrl) {
+        throw new Error('Could not retrieve image URL');
+      }
+      
+      // Download the image
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to download image');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `enhanced-image-${Date.now()}.webp`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast.success('Image downloaded successfully');
     } catch (error) {
@@ -126,11 +150,17 @@ const History = () => {
               {historyItems.map((item) => (
                 <Card key={item.id} className="overflow-hidden">
                   <div className="relative aspect-square">
-                    <img 
-                      src={item.enhanced_image} 
-                      alt="Enhanced property" 
-                      className="object-cover w-full h-full"
-                    />
+                    {imageUrls[item.id] ? (
+                      <img 
+                        src={imageUrls[item.id]} 
+                        alt="Enhanced property" 
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full bg-muted">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-center">
@@ -149,7 +179,7 @@ const History = () => {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => handleDownload(item.enhanced_image, item.id)}
+                      onClick={() => handleDownload(item)}
                       disabled={downloadingId === item.id}
                     >
                       {downloadingId === item.id ? (
