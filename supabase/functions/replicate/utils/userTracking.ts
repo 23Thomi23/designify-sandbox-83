@@ -25,7 +25,10 @@ export async function updateUserUsage(userId: string): Promise<void> {
   // Update the user's consumption record - increment used_images by 1
   const { data, error } = await supabase
     .from('image_consumption')
-    .update({ used_images: supabase.sql`used_images + 1` })
+    .update({ 
+      used_images: supabase.sql`used_images + 1`,
+      updated_at: new Date().toISOString()
+    })
     .eq('user_id', userId)
     .select();
   
