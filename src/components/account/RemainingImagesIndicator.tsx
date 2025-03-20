@@ -11,48 +11,48 @@ export const RemainingImagesIndicator = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchRemainingImages = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-        
-        // Get user profile to check if they're a legacy user
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('is_legacy_user')
-          .eq('id', session.user.id)
-          .single();
-          
-        // Legacy users don't have limits
-        if (profileData?.is_legacy_user) {
-          setRemainingImages(null);
-          setLoading(false);
-          return;
-        }
-        
-        // Fetch user's image consumption data
-        const { data: consumptionData, error: consumptionError } = await supabase
-          .from('image_consumption')
-          .select('available_images')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (!consumptionError && consumptionData) {
-          // Now we directly use available_images instead of calculating from used vs total
-          setRemainingImages(Math.max(0, consumptionData.available_images));
-        }
-      } catch (error) {
-        console.error('Error fetching image usage data:', error);
-      } finally {
+  const fetchRemainingImages = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
         setLoading(false);
+        return;
       }
-    };
-    
+      
+      // Get user profile to check if they're a legacy user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_legacy_user')
+        .eq('id', session.user.id)
+        .single();
+        
+      // Legacy users don't have limits
+      if (profileData?.is_legacy_user) {
+        setRemainingImages(null);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch user's image consumption data
+      const { data: consumptionData, error: consumptionError } = await supabase
+        .from('image_consumption')
+        .select('available_images')
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (!consumptionError && consumptionData) {
+        // Now we directly use available_images instead of calculating from used vs total
+        setRemainingImages(Math.max(0, consumptionData.available_images));
+      }
+    } catch (error) {
+      console.error('Error fetching image usage data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchRemainingImages();
     
     // Set up a listener for auth changes to update the indicator
@@ -60,7 +60,26 @@ export const RemainingImagesIndicator = () => {
       fetchRemainingImages();
     });
     
-    return () => subscription.unsubscribe();
+    // Set up a listener for database changes to the image_consumption table
+    const channel = supabase
+      .channel('image-consumption-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'image_consumption'
+        },
+        () => {
+          fetchRemainingImages();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading || remainingImages === null) {

@@ -56,11 +56,17 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
     const hasAvailableImages = await checkImageLimit();
     if (!hasAvailableImages) {
       toast.error('You have reached your image transformation limit');
+      setShowLimitDialog(true);
       return;
     }
 
     // Process the image, and if successful the callback will refresh usage stats
-    await processImage(selectedImage, selectedRoom, selectedStyle);
+    const success = await processImage(selectedImage, selectedRoom, selectedStyle);
+    
+    // If successful, immediately fetch latest usage data to update UI
+    if (success) {
+      await fetchUsageData();
+    }
   };
 
   return {
