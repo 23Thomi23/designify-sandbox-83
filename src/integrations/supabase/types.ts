@@ -184,7 +184,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_available_images: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
       increment_image_usage: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
+      increment_used_images: {
         Args: {
           user_id: string
         }

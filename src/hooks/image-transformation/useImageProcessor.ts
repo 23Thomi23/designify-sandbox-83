@@ -141,18 +141,19 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       
       // Decrement the available images count in the database
       if (!profileData?.is_legacy_user) {
-        const { error: decrementError } = await supabase
-          .from('image_consumption')
-          .update({ 
-            available_images: supabase.rpc('decrement_available_images'),
-            used_images: supabase.rpc('increment_used_images')
-          })
-          .eq('user_id', userId);
-          
+        // Call RPC functions to update image count
+        const { error: decrementError } = await supabase.rpc('decrement_available_images', { user_id: userId });
         if (decrementError) {
           console.error('Error decrementing available images:', decrementError);
-          // Don't block the user experience if the decrement fails
-          // The image has already been transformed
+        } else {
+          console.log('Successfully decremented available images');
+        }
+        
+        const { error: incrementError } = await supabase.rpc('increment_used_images', { user_id: userId });
+        if (incrementError) {
+          console.error('Error incrementing used images:', incrementError);
+        } else {
+          console.log('Successfully incremented used images');
         }
       }
       
