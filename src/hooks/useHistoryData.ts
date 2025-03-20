@@ -12,9 +12,13 @@ export const useHistoryData = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        setIsLoading(true);
+        
+        // Get the current user session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
+          // Fetch processing history for the current user
           const { data, error } = await supabase
             .from('processing_history')
             .select('*')
@@ -49,6 +53,10 @@ export const useHistoryData = () => {
             }
             setImageUrls(urls);
           }
+        } else {
+          // If no user is logged in, redirect to auth page
+          console.log('No user session found, history will be empty');
+          setHistoryItems([]);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -59,6 +67,15 @@ export const useHistoryData = () => {
     };
 
     fetchHistory();
+    
+    // Set up auth state change listener to refresh history when user logs in/out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchHistory();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {

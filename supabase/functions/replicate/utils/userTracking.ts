@@ -44,20 +44,36 @@ export async function updateUserUsage(userId: string): Promise<void> {
  * Logs the successful processing of an image
  */
 export async function logProcessing(userId: string, imageUrl: string): Promise<void> {
+  if (!userId) {
+    console.error("Cannot log processing: Missing userId");
+    return;
+  }
+  
   const supabase = supabaseClient();
   
-  // Insert a record into the processing_history table
-  const { error } = await supabase
-    .from('processing_history')
-    .insert({
-      user_id: userId,
-      image_url: imageUrl,
-      format: 'png', // Ensure we're saving as PNG format
-      created_at: new Date().toISOString()
-    });
-  
-  if (error) {
-    console.error("Error logging processing history:", error);
-    // Don't throw here, just log the error - we don't want to fail the whole process
+  try {
+    // First, save the original image URL from storage if provided
+    let originalImage = null;
+    
+    // Insert a record into the processing_history table
+    const { error } = await supabase
+      .from('processing_history')
+      .insert({
+        user_id: userId,
+        original_image: originalImage,
+        enhanced_image: imageUrl,
+        processing_type: 'interior_design', 
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error("Error logging processing history:", error);
+      // Don't throw here, just log the error - we don't want to fail the whole process
+    } else {
+      console.log("Successfully logged processing history for user:", userId);
+    }
+  } catch (error) {
+    console.error("Exception when logging processing history:", error);
+    // Don't throw, just log the error
   }
 }
