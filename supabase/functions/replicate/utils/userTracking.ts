@@ -109,3 +109,12 @@ export async function checkUserLimit(supabaseClient: any, userId: string): Promi
     return false;
   }
 }
+
+/**
+ * Logs the processing of an image
+ * This is a placeholder function that can be expanded later
+ */
+export async function logProcessing(userId: string, transformedImage: string, originalImagePath?: string): Promise<void> {
+  console.log(`Logging processing for user ${userId}`);
+  // Implementation can be added later if needed
+}
