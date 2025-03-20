@@ -67,7 +67,7 @@ serve(async (req) => {
           // Update user subscription
           const { data: plan, error: planError } = await supabase
             .from('subscription_plans')
-            .select('included_images')
+            .select('included_images, name')
             .eq('id', session.metadata.planId)
             .single()
             
@@ -94,17 +94,57 @@ serve(async (req) => {
             break
           }
 
-          // Update user's available images
+          console.log(`Subscription updated for user ${session.metadata.userId}, plan: ${plan.name} with ${plan.included_images} images`)
+
+          // Update user's available images and reset used images count
           const { error: usageError } = await supabase
             .from('image_consumption')
             .upsert({
               user_id: session.metadata.userId,
               available_images: plan.included_images,
-              used_images: 0
+              used_images: 0,
+              updated_at: new Date().toISOString()
             })
             
           if (usageError) {
             console.error('Error updating image consumption:', usageError)
+          } else {
+            console.log(`Usage reset for user ${session.metadata.userId}: ${plan.included_images} available, 0 used`)
+          }
+        } else if (session.mode === 'payment' && session.metadata?.userId && session.metadata?.imagePackSize) {
+          // Handle one-time payment for image pack
+          console.log(`One-time payment completed for user ${session.metadata.userId}, ${session.metadata.imagePackSize} images`)
+          
+          // Get current user consumption
+          const { data: currentConsumption, error: consumptionError } = await supabase
+            .from('image_consumption')
+            .select('available_images, used_images')
+            .eq('user_id', session.metadata.userId)
+            .single()
+            
+          if (consumptionError && consumptionError.code !== 'PGRST116') {
+            console.error('Error fetching consumption data:', consumptionError)
+            break
+          }
+          
+          const packSize = parseInt(session.metadata.imagePackSize)
+          const currentAvailable = currentConsumption?.available_images || 0
+          const currentUsed = currentConsumption?.used_images || 0
+          
+          // Update with additional images from pack
+          const { error: updateError } = await supabase
+            .from('image_consumption')
+            .upsert({
+              user_id: session.metadata.userId,
+              available_images: currentAvailable + packSize,
+              used_images: currentUsed,
+              updated_at: new Date().toISOString()
+            })
+            
+          if (updateError) {
+            console.error('Error updating image consumption for pay-per-image:', updateError)
+          } else {
+            console.log(`Added ${packSize} images to user ${session.metadata.userId}, new total: ${currentAvailable + packSize}`)
           }
         }
         break
@@ -122,7 +162,7 @@ serve(async (req) => {
             // Get plan details
             const { data: plan, error: planError } = await supabase
               .from('subscription_plans')
-              .select('included_images')
+              .select('included_images, name')
               .eq('id', subscription.metadata.planId)
               .single()
               
@@ -131,17 +171,22 @@ serve(async (req) => {
               break
             }
             
+            console.log(`Renewal for plan: ${plan.name} with ${plan.included_images} images`)
+            
             // Reset available images for the new billing period
             const { error: usageError } = await supabase
               .from('image_consumption')
               .upsert({
                 user_id: subscription.metadata.userId,
                 available_images: plan.included_images,
-                used_images: 0
+                used_images: 0,
+                updated_at: new Date().toISOString()
               })
               
             if (usageError) {
               console.error('Error resetting image consumption:', usageError)
+            } else {
+              console.log(`Usage reset for renewal: ${plan.included_images} images available, 0 used`)
             }
             
             // Update subscription period
@@ -149,7 +194,8 @@ serve(async (req) => {
               .from('user_subscriptions')
               .update({
                 status: 'active',
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                updated_at: new Date().toISOString()
               })
               .eq('stripe_subscription_id', invoice.subscription)
               
@@ -172,7 +218,8 @@ serve(async (req) => {
             .update({
               status: subscription.status,
               cancel_at_period_end: subscription.cancel_at_period_end,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              updated_at: new Date().toISOString()
             })
             .eq('stripe_subscription_id', subscription.id)
             
@@ -191,7 +238,8 @@ serve(async (req) => {
         const { error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .update({
-            status: 'cancelled'
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
           })
           .eq('stripe_subscription_id', subscription.id)
           

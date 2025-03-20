@@ -126,6 +126,13 @@ export async function ensureSubscriptionPlans(): Promise<void> {
       price: 29.99,
       included_images: 200,
       features: ['200 image transformations per month', 'Premium AI enhancement', 'Ultra high resolution output', 'Dedicated support', 'Commercial usage rights']
+    },
+    {
+      name: 'Pay Per Image',
+      description: 'Pay only for what you use',
+      price: 19.99,
+      included_images: 25,
+      features: ['25 image transformations per pack', 'Premium AI enhancement', 'High resolution output', 'No recurring fees']
     }
   ];
   

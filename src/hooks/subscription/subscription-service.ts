@@ -128,6 +128,7 @@ export const createSubscription = async (planId: string, userId: string): Promis
           .from('image_consumption')
           .update({ 
             available_images: planData.included_images,
+            used_images: 0,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingConsumption.id);
@@ -171,6 +172,32 @@ export const createSubscription = async (planId: string, userId: string): Promis
     url: response.data?.url,
     success: response.data?.success
   };
+};
+
+// For pay-per-image purchases
+export const purchaseImagePack = async (userId: string, packSize: number = 25): Promise<{ url?: string }> => {
+  try {
+    const response = await supabase.functions.invoke('create-checkout', {
+      body: {
+        userId,
+        isPayPerImage: true,
+        imagePackSize: packSize
+      }
+    });
+    
+    if (response.error) {
+      throw new Error(response.error);
+    } else if (response.data?.error) {
+      throw new Error(response.data.error);
+    }
+    
+    return {
+      url: response.data?.url
+    };
+  } catch (error) {
+    console.error('Error creating pay-per-image checkout:', error);
+    throw error;
+  }
 };
 
 // Simple method to update a user's subscription tier directly (for demo/testing purposes)
@@ -230,6 +257,7 @@ export const updateSubscriptionTier = async (userId: string, planId: string): Pr
           .from('image_consumption')
           .update({ 
             available_images: planData.included_images,
+            used_images: 0,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingConsumption.id);
