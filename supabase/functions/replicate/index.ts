@@ -29,7 +29,7 @@ serve(async (req) => {
       );
     }
 
-    const { image, prompt, userId } = await req.json();
+    const { image, prompt, userId, originalImagePath } = await req.json();
 
     if (!image) {
       return new Response(JSON.stringify({ error: "Missing image" }), {
@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Update user usage and log processing - IMPORTANT: this increments the used_images count
     await updateUserUsage(userId);
-    await logProcessing(userId, finalImage);
+    await logProcessing(userId, finalImage, originalImagePath);
 
     // Return the final image
     return new Response(JSON.stringify({ output: finalImage }), {

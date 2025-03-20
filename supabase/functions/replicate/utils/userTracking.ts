@@ -1,4 +1,3 @@
-
 import { supabaseClient } from '../../_shared/supabase-client.ts';
 
 /**
@@ -42,8 +41,15 @@ export async function updateUserUsage(userId: string): Promise<void> {
 
 /**
  * Logs the successful processing of an image
+ * @param userId The user ID
+ * @param imageUrl The URL of the enhanced image
+ * @param originalImageUrl Optional URL of the original image
  */
-export async function logProcessing(userId: string, imageUrl: string): Promise<void> {
+export async function logProcessing(
+  userId: string, 
+  imageUrl: string, 
+  originalImageUrl?: string
+): Promise<void> {
   if (!userId) {
     console.error("Cannot log processing: Missing userId");
     return;
@@ -52,25 +58,25 @@ export async function logProcessing(userId: string, imageUrl: string): Promise<v
   const supabase = supabaseClient();
   
   try {
-    // First, save the original image URL from storage if provided
-    let originalImage = null;
+    console.log(`Logging processing history for user ${userId}`);
     
     // Insert a record into the processing_history table
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('processing_history')
       .insert({
         user_id: userId,
-        original_image: originalImage,
+        original_image: originalImageUrl || null,
         enhanced_image: imageUrl,
         processing_type: 'interior_design', 
         created_at: new Date().toISOString()
-      });
+      })
+      .select();
     
     if (error) {
       console.error("Error logging processing history:", error);
       // Don't throw here, just log the error - we don't want to fail the whole process
     } else {
-      console.log("Successfully logged processing history for user:", userId);
+      console.log("Successfully logged processing history:", data?.[0]?.id);
     }
   } catch (error) {
     console.error("Exception when logging processing history:", error);
