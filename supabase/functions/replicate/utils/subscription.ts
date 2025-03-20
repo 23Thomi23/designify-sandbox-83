@@ -1,3 +1,4 @@
+
 import { supabaseClient } from '../../_shared/supabase-client.ts';
 
 /**
@@ -56,7 +57,8 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
           return true;
         }
         
-        // New user, hasn't used any images yet
+        // New user with 0 used images, hasn't reached limit yet
+        console.log(`New user ${userId} created with ${freeLimit} available images`);
         return false;
       }
       
@@ -65,7 +67,7 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
       return true;
     }
     
-    // Check if the user has reached their limit
+    // Strictly check if the user has reached their limit
     if (consumptionData.used_images >= consumptionData.available_images) {
       console.log(`User ${userId} has reached their limit: ${consumptionData.used_images}/${consumptionData.available_images}`);
       return true;

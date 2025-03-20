@@ -24,6 +24,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
     setTransformedImage(null);
     
     try {
+      // STRICT LIMIT ENFORCEMENT:
       // Get user profile to check if they're a legacy user
       const { data: profileData } = await supabase
         .from('profiles')
@@ -33,7 +34,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         
       // If not a legacy user, strictly verify the image limit
       if (!profileData?.is_legacy_user) {
-        // Verify the user has not reached their image limit before proceeding
+        // Double-check the user has not reached their image limit before proceeding
         const { data: consumption, error: consumptionError } = await supabase
           .from('image_consumption')
           .select('available_images, used_images')
@@ -48,13 +49,15 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
           return false;
         }
         
-        // Strict limit enforcement - don't process if user is at or above their limit
+        // Very strict limit enforcement - if user is at or over their limit, prevent processing
         if (consumption && consumption.used_images >= consumption.available_images) {
           setError('You have reached your subscription limit');
           toast.error('Subscription limit reached. Please upgrade your plan to continue.');
           setIsLoading(false);
           return false;
         }
+
+        console.log(`User has ${consumption.available_images - consumption.used_images} images remaining before processing`);
       }
 
       // Convert the image to base64

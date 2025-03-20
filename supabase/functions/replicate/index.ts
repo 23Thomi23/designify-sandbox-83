@@ -56,7 +56,7 @@ serve(async (req) => {
       );
     }
 
-    // Strictly check subscription limits before processing
+    // IMPORTANT: Strictly check subscription limits before processing
     const limitExceeded = await checkSubscriptionLimits(userId);
     if (limitExceeded) {
       console.log(`User ${userId} has exceeded their subscription limit. Rejecting request.`);
