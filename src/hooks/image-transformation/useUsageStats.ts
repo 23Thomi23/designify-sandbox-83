@@ -44,23 +44,22 @@ export const useUsageStats = (userId: string) => {
       if (consumptionData) {
         const usedImages = consumptionData.used_images;
         const availableImages = consumptionData.available_images;
-        const remainingImages = Math.max(0, availableImages - usedImages);
         
-        console.log(`User has ${remainingImages} images remaining (${usedImages}/${availableImages} used)`);
+        console.log(`User has ${availableImages} images remaining (${usedImages} used)`);
         
         setUsageStats({
           usedImages,
           availableImages,
-          remainingImages
+          remainingImages: Math.max(0, availableImages)
         });
         
         // If user has very few images left, show a warning
-        if (remainingImages <= 2 && remainingImages > 0) {
-          toast.warning(`You have only ${remainingImages} image${remainingImages === 1 ? '' : 's'} left in your plan.`);
+        if (availableImages <= 2 && availableImages > 0) {
+          toast.warning(`You have only ${availableImages} image${availableImages === 1 ? '' : 's'} left in your plan.`);
         }
         
         // If user is out of images, show a notification
-        if (remainingImages === 0) {
+        if (availableImages === 0) {
           toast.error('You have reached your image transformation limit. Please upgrade your plan to continue.');
         }
       } else {
@@ -132,8 +131,8 @@ export const useUsageStats = (userId: string) => {
         return false;
       }
       
-      // If user has used all their images, show the limit dialog
-      if (consumption && consumption.used_images >= consumption.available_images) {
+      // If user has no available images, show the limit dialog
+      if (consumption && consumption.available_images <= 0) {
         console.log("User has reached their limit, showing upgrade dialog");
         
         const { data: plans } = await supabase
@@ -145,7 +144,7 @@ export const useUsageStats = (userId: string) => {
         setUsageStats({
           usedImages: consumption.used_images,
           availableImages: consumption.available_images,
-          remainingImages: 0
+          remainingImages: Math.max(0, consumption.available_images)
         });
         setShowLimitDialog(true);
         return false;
@@ -156,7 +155,7 @@ export const useUsageStats = (userId: string) => {
         setUsageStats({
           usedImages: consumption.used_images,
           availableImages: consumption.available_images,
-          remainingImages: Math.max(0, consumption.available_images - consumption.used_images)
+          remainingImages: Math.max(0, consumption.available_images)
         });
       }
       

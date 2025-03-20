@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,15 +38,13 @@ export const RemainingImagesIndicator = () => {
         // Fetch user's image consumption data
         const { data: consumptionData, error: consumptionError } = await supabase
           .from('image_consumption')
-          .select('*')
+          .select('available_images')
           .eq('user_id', session.user.id)
           .single();
           
         if (!consumptionError && consumptionData) {
-          const usedImages = consumptionData.used_images;
-          const availableImages = consumptionData.available_images;
-          const remaining = Math.max(0, availableImages - usedImages);
-          setRemainingImages(remaining);
+          // Now we directly use available_images instead of calculating from used vs total
+          setRemainingImages(Math.max(0, consumptionData.available_images));
         }
       } catch (error) {
         console.error('Error fetching image usage data:', error);

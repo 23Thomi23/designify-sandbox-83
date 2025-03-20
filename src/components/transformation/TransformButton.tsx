@@ -31,7 +31,7 @@ export const TransformButton = ({
       ) : (
         <Wand2 className="mr-2 h-4 w-4" />
       )}
-      {isLoading ? 'Processing...' : noImagesLeft ? 'No Transformations Left' : 'Transform Room'}
+      {isLoading ? 'Processing...' : noImagesLeft ? 'No Images Left' : 'Transform Room'}
     </Button>
   );
 };

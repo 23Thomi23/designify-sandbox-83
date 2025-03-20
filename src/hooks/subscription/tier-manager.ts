@@ -39,7 +39,7 @@ export const updateSubscriptionTier = async (userId: string, planId: string): Pr
       if (error) throw error;
     }
     
-    // Update user's available images based on the selected plan
+    // Get the plan's image allocation
     const { data: planData } = await supabase
       .from('subscription_plans')
       .select('included_images')
@@ -55,12 +55,11 @@ export const updateSubscriptionTier = async (userId: string, planId: string): Pr
         .single();
         
       if (existingConsumption) {
-        // Update existing consumption
+        // Update existing consumption: Reset available_images to the plan's included_images
         const { error } = await supabase
           .from('image_consumption')
           .update({ 
             available_images: planData.included_images,
-            used_images: 0,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingConsumption.id);

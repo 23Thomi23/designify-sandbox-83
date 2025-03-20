@@ -1,3 +1,4 @@
+
 import { supabaseClient } from '../../_shared/supabase-client.ts';
 
 /**
@@ -21,11 +22,14 @@ export async function updateUserUsage(userId: string): Promise<void> {
   
   console.log("Updating usage count for user:", userId);
   
-  // Update the user's consumption record - increment used_images by 1
+  // Update the user's consumption record in two ways:
+  // 1. Increment used_images by 1
+  // 2. Decrement available_images by 1
   const { data, error } = await supabase
     .from('image_consumption')
     .update({ 
       used_images: supabase.sql`used_images + 1`,
+      available_images: supabase.sql`available_images - 1`,
       updated_at: new Date().toISOString()
     })
     .eq('user_id', userId)
@@ -36,7 +40,7 @@ export async function updateUserUsage(userId: string): Promise<void> {
     throw new Error(`Failed to update user usage: ${error.message}`);
   }
   
-  console.log("Updated usage for user:", userId, "New count:", data?.[0]?.used_images);
+  console.log("Updated usage for user:", userId, "New count:", data?.[0]?.used_images, "Available:", data?.[0]?.available_images);
 }
 
 /**

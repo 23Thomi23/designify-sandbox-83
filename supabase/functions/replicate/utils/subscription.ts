@@ -67,13 +67,13 @@ export async function checkSubscriptionLimits(userId: string): Promise<boolean> 
       return true;
     }
     
-    // Strictly check if the user has reached their limit
-    if (consumptionData.used_images >= consumptionData.available_images) {
-      console.log(`User ${userId} has reached their limit: ${consumptionData.used_images}/${consumptionData.available_images}`);
+    // Strictly check if the user has no available images left
+    if (consumptionData.available_images <= 0) {
+      console.log(`User ${userId} has no available images left: ${consumptionData.used_images}/${consumptionData.available_images}`);
       return true;
     }
     
-    console.log(`User ${userId} has ${consumptionData.available_images - consumptionData.used_images} images remaining`);
+    console.log(`User ${userId} has ${consumptionData.available_images} images remaining`);
     return false;
   } catch (error) {
     console.error(`Error checking subscription limits for user ${userId}:`, error);
