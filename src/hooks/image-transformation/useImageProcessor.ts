@@ -139,6 +139,23 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       setTransformedImage(response.data.output);
       toast.success('Transformation complete!');
       
+      // Decrement the available images count in the database
+      if (!profileData?.is_legacy_user) {
+        const { error: decrementError } = await supabase
+          .from('image_consumption')
+          .update({ 
+            available_images: supabase.rpc('decrement_available_images'),
+            used_images: supabase.rpc('increment_used_images')
+          })
+          .eq('user_id', userId);
+          
+        if (decrementError) {
+          console.error('Error decrementing available images:', decrementError);
+          // Don't block the user experience if the decrement fails
+          // The image has already been transformed
+        }
+      }
+      
       // Trigger the callback on success to fetch the updated usage stats
       onSuccess();
       return true;
