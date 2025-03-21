@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +14,8 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
   const processImage = async (
     selectedImage: File, 
     selectedRoom: Room, 
-    selectedStyle: string
+    selectedStyle: string,
+    originalImagePath: string
   ) => {
     setIsLoading(true);
     setProcessingPhase('Checking subscription limits...');
@@ -88,7 +88,8 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         body: {
           image: base64Image,
           prompt: fullPrompt,
-          userId: userId
+          userId: userId,
+          originalImagePath: originalImagePath
         }
       });
 

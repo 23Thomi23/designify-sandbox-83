@@ -44,12 +44,13 @@ export const useUsageStats = (userId: string) => {
       if (consumptionData) {
         const usedImages = consumptionData.used_images;
         const availableImages = consumptionData.available_images;
+        const totalImages = usedImages + availableImages;
         
-        console.log(`User has ${availableImages} images remaining (${usedImages} used)`);
+        console.log(`User has ${availableImages} images remaining (${usedImages} used out of ${totalImages} total)`);
         
         setUsageStats({
           usedImages,
-          availableImages,
+          availableImages: totalImages,
           remainingImages: Math.max(0, availableImages)
         });
         
@@ -183,6 +184,19 @@ export const useUsageStats = (userId: string) => {
   useEffect(() => {
     if (userId) {
       fetchUsageData();
+      
+      // Set up a subscription to refresh usage data every time the page is focused
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          fetchUsageData();
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, [userId]);
 

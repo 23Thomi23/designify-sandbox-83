@@ -43,19 +43,18 @@ export async function updateUserUsage(supabaseClient: any, userId: string): Prom
       return false;
     }
     
-    // Update consumption - decrement available and increment used
-    const { error: updateError } = await supabaseClient
-      .from('image_consumption')
-      .update({
-        available_images: Math.max(0, consumption.available_images - 1),
-        used_images: consumption.used_images + 1,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
-    
+    // Use database functions to safely decrement available images and increment used images
+    const { error: updateError } = await supabaseClient.rpc('decrement_available_images', { user_id: userId });
     if (updateError) {
-      console.error("Error updating image consumption:", updateError);
+      console.error("Error decreasing available images:", updateError);
       return false;
+    }
+    
+    const { error: incrementError } = await supabaseClient.rpc('increment_used_images', { user_id: userId });
+    if (incrementError) {
+      console.error("Error incrementing used images:", incrementError);
+      // We've already decremented available, so log but continue
+      console.log("Warning: Available images decreased but used count not incremented");
     }
     
     console.log(`Successfully updated usage for user ${userId}. New available: ${consumption.available_images - 1}, Used: ${consumption.used_images + 1}`);
