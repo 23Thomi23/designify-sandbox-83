@@ -18,7 +18,7 @@ export const TransformButton = ({
   remainingImages
 }: TransformButtonProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const noImagesLeft = remainingImages === 0;
+  const noImagesLeft = remainingImages !== undefined && remainingImages <= 0;
   
   const handleClick = async () => {
     if (noImagesLeft) {

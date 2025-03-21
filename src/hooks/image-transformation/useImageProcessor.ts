@@ -24,7 +24,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
     setTransformedImage(null);
     
     try {
-      // STRICT LIMIT ENFORCEMENT:
+      // ENHANCED LIMIT ENFORCEMENT - Client-side check before sending to API
       // Get user profile to check if they're a legacy user
       const { data: profileData } = await supabase
         .from('profiles')
@@ -50,7 +50,7 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
         }
         
         // Very strict limit enforcement - if user has no available images, prevent processing
-        if (consumption && consumption.available_images <= 0) {
+        if (!consumption || consumption.available_images <= 0) {
           setError('You have no available images remaining');
           toast.error('No available images left. Please upgrade your plan to continue.');
           setIsLoading(false);
@@ -138,24 +138,6 @@ export const useImageProcessor = (userId: string, onSuccess: () => void) => {
       // Set the transformed image
       setTransformedImage(response.data.output);
       toast.success('Transformation complete!');
-      
-      // Decrement the available images count in the database
-      if (!profileData?.is_legacy_user) {
-        // Call RPC functions to update image count
-        const { error: decrementError } = await supabase.rpc('decrement_available_images', { user_id: userId });
-        if (decrementError) {
-          console.error('Error decrementing available images:', decrementError);
-        } else {
-          console.log('Successfully decremented available images');
-        }
-        
-        const { error: incrementError } = await supabase.rpc('increment_used_images', { user_id: userId });
-        if (incrementError) {
-          console.error('Error incrementing used images:', incrementError);
-        } else {
-          console.log('Successfully incremented used images');
-        }
-      }
       
       // Trigger the callback on success to fetch the updated usage stats
       onSuccess();

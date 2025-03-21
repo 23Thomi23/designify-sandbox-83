@@ -4,7 +4,8 @@ import { corsHeaders } from "./utils/cors.ts";
 import { checkSubscriptionLimits, ensureSubscriptionPlans } from "./utils/subscription.ts";
 import { generateTransformation } from "./services/imageTransformation.ts";
 import { enhanceWithUpscaler } from "./services/imageEnhancement.ts";
-import { updateUserUsage, logProcessing } from "./utils/userTracking.ts";
+import { updateUserUsage, checkUserLimit, logProcessing } from "./utils/userTracking.ts";
+import { supabaseClient } from "../_shared/supabase-client.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -56,7 +57,24 @@ serve(async (req) => {
       );
     }
 
-    // IMPORTANT: Strictly check subscription limits before processing
+    // STRICT CHECK #1: Using supabaseClient to directly check if the user has available images
+    const supabase = supabaseClient();
+    const canProcess = await checkUserLimit(supabase, userId);
+    if (!canProcess) {
+      console.log(`User ${userId} has no available images. Rejecting request.`);
+      return new Response(
+        JSON.stringify({
+          limitExceeded: true,
+          message: "You have reached your subscription limit for this period",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // STRICT CHECK #2: Double-check subscription limits
     const limitExceeded = await checkSubscriptionLimits(userId);
     if (limitExceeded) {
       console.log(`User ${userId} has exceeded their subscription limit. Rejecting request.`);
@@ -85,7 +103,20 @@ serve(async (req) => {
     const finalImage = await enhanceWithUpscaler(REPLICATE_API_KEY, generatedImage);
 
     // Update user usage and log processing - IMPORTANT: this increments the used_images count
-    await updateUserUsage(userId);
+    const usageUpdated = await updateUserUsage(supabase, userId);
+    if (!usageUpdated) {
+      console.error(`Failed to update usage for user ${userId}. This may indicate a limit issue.`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to update usage. You may have reached your subscription limit."
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    
     await logProcessing(userId, finalImage, originalImagePath);
 
     // Return the final image

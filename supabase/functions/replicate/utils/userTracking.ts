@@ -37,8 +37,8 @@ export async function updateUserUsage(supabaseClient: any, userId: string): Prom
       return false;
     }
 
-    // Check if user has available images
-    if (consumption && consumption.available_images <= 0) {
+    // STRICT CHECK: Ensure user has available images before proceeding
+    if (!consumption || consumption.available_images <= 0) {
       console.error("User has no available images left");
       return false;
     }
@@ -103,6 +103,7 @@ export async function checkUserLimit(supabaseClient: any, userId: string): Promi
       return false;
     }
     
+    // STRICT CHECK: Return false if user has no available images or if no consumption record found
     return consumption && consumption.available_images > 0;
   } catch (error) {
     console.error("Unexpected error checking user limit:", error);
