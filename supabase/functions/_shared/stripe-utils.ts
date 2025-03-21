@@ -23,13 +23,13 @@ export const PLAN_PRICE_MAP: Record<string, string> = {
   'free': 'price_1P2nW5Gy89EHd6dDUEvQ62Kl',
   
   // Paid plans
-  'basic': 'price_1P2nWNGy89EHd6dDcQhKICDi',
+  'basic': 'price_1R4nE5Gjhg0xshREbP6LcuYK',  // Updated Basic plan price ID
   'professional': 'price_1P2nWaGy89EHd6dDFVFSqI8p',
-  'business': 'price_1P2nWnGy89EHd6dDnm9DQYPj',
+  'business': 'price_1R4nFpGjhg0xshREqOyu5upT',  // Updated Business plan price ID
   
   // Pay per image packs
-  'payperimage': 'price_1P2nX1Gy89EHd6dDB2m9dA8w',
+  'payperimage': 'price_1R4n9pGjhg0xshRE0S2KYoqU',  // Updated Pay per image price ID
   
   // Default fallback - use the basic plan if no match found
-  'default': 'price_1P2nWNGy89EHd6dDcQhKICDi'
+  'default': 'price_1R4nE5Gjhg0xshREbP6LcuYK'  // Updated default to new Basic plan price ID
 }
