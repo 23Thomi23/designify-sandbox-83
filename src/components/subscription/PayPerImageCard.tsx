@@ -2,6 +2,9 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PayPerImageCardProps {
   creating: boolean;
@@ -9,6 +12,47 @@ interface PayPerImageCardProps {
 }
 
 export const PayPerImageCard = ({ creating, onSubscribe }: PayPerImageCardProps) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleBuyPack = async () => {
+    setIsProcessing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please sign in to purchase image packs');
+        return;
+      }
+      
+      toast.info('Preparing checkout...');
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          userId: session.user.id,
+          isPayPerImage: true,
+          imagePackSize: 10
+        }
+      });
+      
+      if (error || data?.error) {
+        console.error('Checkout error:', error || data?.error);
+        toast.error('Failed to create checkout session');
+        return;
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to process request');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -35,10 +79,10 @@ export const PayPerImageCard = ({ creating, onSubscribe }: PayPerImageCardProps)
       <CardFooter>
         <Button 
           className="w-full" 
-          onClick={onSubscribe}
-          disabled={creating}
+          onClick={handleBuyPack}
+          disabled={isProcessing || creating}
         >
-          {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {(isProcessing || creating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Buy Pack
         </Button>
       </CardFooter>

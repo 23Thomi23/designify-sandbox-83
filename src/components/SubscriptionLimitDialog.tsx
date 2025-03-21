@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionPlan {
   id: string;
@@ -33,13 +35,46 @@ export function SubscriptionLimitDialog({
   const navigate = useNavigate();
 
   const handleUpgrade = (planId: string) => {
-    navigate(`/subscription/checkout?plan=${planId}`);
+    navigate(`/subscription`);
     onClose();
   };
   
-  const handleBuyPerImage = () => {
-    window.location.href = "https://buy.stripe.com/5kA2bV0mldRHaOseUU";
-    onClose();
+  const handleBuyPerImage = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please sign in to purchase image packs');
+        return;
+      }
+      
+      toast.info('Preparing checkout...');
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          userId: session.user.id,
+          isPayPerImage: true,
+          imagePackSize: 10
+        }
+      });
+      
+      if (error || data?.error) {
+        console.error('Checkout error:', error || data?.error);
+        toast.error('Failed to create checkout session');
+        return;
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to process request');
+    } finally {
+      onClose();
+    }
   };
 
   const isLimitReached = remainingImages <= 0;
@@ -69,7 +104,8 @@ export function SubscriptionLimitDialog({
         <div className="grid gap-4 py-4">
           {/* Pay Per Image Option */}
           <div 
-            className="p-4 border rounded-lg hover:border-primary transition-all"
+            className="p-4 border rounded-lg hover:border-primary transition-all cursor-pointer"
+            onClick={handleBuyPerImage}
           >
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-medium text-lg">Pay per Image</h3>
@@ -80,8 +116,11 @@ export function SubscriptionLimitDialog({
               <span className="text-green-600">10</span> images per pack
             </div>
             <Button 
-              className="w-full mt-3" 
-              onClick={handleBuyPerImage}
+              className="w-full mt-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBuyPerImage();
+              }}
             >
               Buy Pack
             </Button>
@@ -90,7 +129,8 @@ export function SubscriptionLimitDialog({
           {plans.map((plan) => (
             <div 
               key={plan.id}
-              className="p-4 border rounded-lg hover:border-primary transition-all"
+              className="p-4 border rounded-lg hover:border-primary transition-all cursor-pointer"
+              onClick={() => handleUpgrade(plan.id)}
             >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-medium text-lg">{plan.name}</h3>
@@ -102,7 +142,10 @@ export function SubscriptionLimitDialog({
               </div>
               <Button 
                 className="w-full mt-3" 
-                onClick={() => handleUpgrade(plan.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUpgrade(plan.id);
+                }}
               >
                 Upgrade to {plan.name}
               </Button>

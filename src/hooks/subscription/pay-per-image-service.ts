@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 /**
  * Purchase a one-time image pack
  */
-export const purchaseImagePack = async (userId: string, packSize: number = 25): Promise<{ url?: string }> => {
+export const purchaseImagePack = async (userId: string, packSize: number = 10): Promise<{ url?: string }> => {
   try {
     const response = await supabase.functions.invoke('create-checkout', {
       body: {
