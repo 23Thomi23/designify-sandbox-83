@@ -1,4 +1,3 @@
-
 import { supabaseClient } from '../../_shared/supabase-client.ts';
 
 /**
@@ -104,7 +103,7 @@ export async function ensureSubscriptionPlans(): Promise<void> {
     return;
   }
   
-  // Otherwise, create the default plans
+  // Otherwise, create the default plans without the Professional plan
   const defaultPlans = [
     {
       name: 'Free',
@@ -114,8 +113,8 @@ export async function ensureSubscriptionPlans(): Promise<void> {
       features: ['5 image transformations per month', 'Basic AI enhancement', 'Standard resolution output']
     },
     {
-      name: 'Pro',
-      description: 'Professional access with more transformations',
+      name: 'Basic',
+      description: 'Enhanced access with more transformations',
       price: 9.99,
       included_images: 50,
       features: ['50 image transformations per month', 'Advanced AI enhancement', 'High resolution output', 'Priority support']

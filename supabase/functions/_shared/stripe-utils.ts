@@ -24,7 +24,6 @@ export const PLAN_PRICE_MAP: Record<string, string> = {
   
   // Paid plans
   'basic': 'price_1R4nE5Gjhg0xshREbP6LcuYK',  // Updated Basic plan price ID
-  'professional': 'price_1P2nWaGy89EHd6dDFVFSqI8p',
   'business': 'price_1R4nFpGjhg0xshREqOyu5upT',  // Updated Business plan price ID
   
   // Pay per image packs

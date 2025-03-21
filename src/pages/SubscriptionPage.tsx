@@ -22,6 +22,9 @@ const SubscriptionPage = () => {
     formatDate
   } = useSubscriptionManagement();
   
+  // Filter out the Professional plan
+  const filteredPlans = availablePlans.filter(plan => plan.name !== "Professional");
+  
   return (
     <div className="container max-w-4xl py-10">
       <BackButton />
@@ -53,7 +56,7 @@ const SubscriptionPage = () => {
               onSubscribe={() => handleSubscribe("", "Business")}
             />
             
-            {availablePlans.map((plan) => (
+            {filteredPlans.map((plan) => (
               <PlanCard 
                 key={plan.id} 
                 plan={plan}

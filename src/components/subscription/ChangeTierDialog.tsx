@@ -31,7 +31,9 @@ export function ChangeTierDialog({ open, onOpenChange }: ChangeTierDialogProps) 
         
         // Fetch available plans
         const plansData = await fetchAvailablePlans();
-        setPlans(plansData);
+        // Filter out the Professional plan
+        const filteredPlans = plansData.filter(plan => plan.name !== "Professional");
+        setPlans(filteredPlans);
         
         // Get current user's subscription
         const { data: subscription } = await supabase

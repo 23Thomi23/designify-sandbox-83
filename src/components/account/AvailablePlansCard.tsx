@@ -17,7 +17,7 @@ export const AvailablePlansCard = ({ plans, currentPlanId }: AvailablePlansCardP
       window.location.href = "https://buy.stripe.com/dR68Aj7ON14V1dSfZ0";
       return;
     }
-    if (planName === "Professional") {
+    if (planName === "Business") {
       window.location.href = "https://buy.stripe.com/dR6aIrc5328Z09O5kl";
       return;
     }
@@ -51,7 +51,7 @@ export const AvailablePlansCard = ({ plans, currentPlanId }: AvailablePlansCardP
             </Button>
           </div>
           
-          {plans.map((plan) => (
+          {plans.filter(plan => plan.name !== "Professional").map((plan) => (
             <div key={plan.id} className="p-4 border rounded-lg">
               <h3 className="font-semibold text-sm">{plan.name}</h3>
               <div className="text-xl font-bold my-1">${plan.price}<span className="text-xs font-normal text-muted-foreground">/month</span></div>
