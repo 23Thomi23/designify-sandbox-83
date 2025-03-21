@@ -60,8 +60,11 @@ export const useImageTransformation = ({ userId }: UseImageTransformationProps) 
       return;
     }
 
+    // Create a unique path for the original image
+    const originalImagePath = `originals/${userId}/${Date.now()}-${selectedImage.name}`;
+    
     // Process the image, and if successful the callback will refresh usage stats
-    const success = await processImage(selectedImage, selectedRoom, selectedStyle);
+    const success = await processImage(selectedImage, selectedRoom, selectedStyle, originalImagePath);
     
     // If successful, immediately fetch latest usage data to update UI
     if (success) {
