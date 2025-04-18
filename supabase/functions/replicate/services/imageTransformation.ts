@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Replicate from "https://esm.sh/replicate@0.25.2";
 
@@ -30,7 +31,7 @@ export async function generateTransformation(
         input: {
           image: image,
           prompt: prompt,
-          prompt_strength: 0.8, // Updated from 0.65 to 0.8
+          prompt_strength: 0.65, // Reverted back to 0.65
         },
       }),
     },
