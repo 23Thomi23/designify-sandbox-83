@@ -1,3 +1,6 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
+
 /**
  * Calls the Replicate API to generate an image transformation
  * @param apiKey Replicate API key
