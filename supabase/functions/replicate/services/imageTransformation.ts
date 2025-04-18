@@ -1,4 +1,3 @@
-
 /**
  * Calls the Replicate API to generate an image transformation
  * @param apiKey Replicate API key
@@ -28,7 +27,7 @@ export async function generateTransformation(
         input: {
           image: image,
           prompt: prompt,
-          prompt_strength: 0.65, // Setting prompt_strength to 0.65 as requested
+          prompt_strength: 0.8, // Updated from 0.65 to 0.8
         },
       }),
     },
